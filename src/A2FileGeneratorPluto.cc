@@ -238,6 +238,15 @@ G4ParticleDefinition* A2FileGeneratorPluto::PlutoToG4(Int_t id)
         }
         return partDef;
     }
+    else if (id == 614) // Special case for carbon target, TODO code this for general nuclei
+    {
+        G4int Z, A, L, J;
+        G4double E;
+        if (G4IonTable::GetNucleusByEncoding(1000060120, Z, A, L, E, J))
+            return G4ParticleTable::GetParticleTable()->GetIonTable()->GetIon(Z, A, L, 0.0, J);
+        else
+            return 0;
+    }
     else
         return 0;
 }
