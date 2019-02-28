@@ -162,6 +162,8 @@ G4bool A2FileGeneratorPluto::ReadEvent(G4int event)
     // clear particles
     fPart.clear();
 
+    G4bool isPseudoPart = false;
+
     // loop over particles
     for (G4int i = 0; i < fNPart; i++)
     {
@@ -182,7 +184,7 @@ G4bool A2FileGeneratorPluto::ReadEvent(G4int event)
             part.fIsTrack = true;
         }
         // check for pseudo beam-particle
-        else if (fPartID[i] > 1000)
+        else if (fPartID[i] > 1000 && !isPseudoPart)
         {
             // extract beam and target indices
             //G4int beam_id = fPartID[i] % 1000;
@@ -207,6 +209,8 @@ G4bool A2FileGeneratorPluto::ReadEvent(G4int event)
             fBeam.fE = fPartE[i]*GeV;
             fBeam.fM = 0;
             fBeam.fIsTrack = false;
+
+            isPseudoPart = true; // Only use the first instance of this, in the case of quasi-free process
         }
 
         // add event particle
