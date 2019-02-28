@@ -87,8 +87,12 @@ void A2FileGenerator::Print() const
         type = "Mkin";
     else if (fType == kPluto)
         type = "Pluto";
+    else if (fType == kPluto6)
+        type = "Pluto6";
     else if (fType == kPlutoCocktail)
         type = "Pluto Cocktail";
+    else if (fType == kPluto6Cocktail)
+        type = "Pluto6 Cocktail";
     else
         type = "Unknown";
 

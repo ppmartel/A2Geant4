@@ -61,10 +61,12 @@ A2FileGeneratorPluto::A2FileGeneratorPluto(const char* filename)
     // init members
     fNPart = 0;
     fPartTop = new Int_t[fgMaxParticles];
+    fPartP = new TClonesArray("TLorentzVector",fgMaxParticles);
     fPartPx = new Double_t[fgMaxParticles];
     fPartPy = new Double_t[fgMaxParticles];
     fPartPz = new Double_t[fgMaxParticles];
     fPartE = new Double_t[fgMaxParticles];
+    fPartV = new TClonesArray("TVector3",fgMaxParticles);
     fPartX = new Double_t[fgMaxParticles];
     fPartY = new Double_t[fgMaxParticles];
     fPartZ = new Double_t[fgMaxParticles];
@@ -80,6 +82,8 @@ A2FileGeneratorPluto::~A2FileGeneratorPluto()
 
     if (fPartTop)
         delete [] fPartTop;
+    if (fPartP)
+        delete fPartP;
     if (fPartPx)
         delete [] fPartPx;
     if (fPartPy)
@@ -88,6 +92,8 @@ A2FileGeneratorPluto::~A2FileGeneratorPluto()
         delete [] fPartPz;
     if (fPartE)
         delete [] fPartE;
+    if (fPartV)
+        delete fPartV;
     if (fPartX)
         delete [] fPartX;
     if (fPartY)
@@ -114,38 +120,68 @@ G4bool A2FileGeneratorPluto::Init()
     // use decomposed object mode
     fTree->SetMakeClass(1);
 
-    // set branch status
-    fTree->SetBranchStatus("*", 0);
-    fTree->SetBranchStatus("Npart", 1);
-    fTree->SetBranchStatus("Particles", 1);
-    fTree->SetBranchStatus("Particles.fP.fX", 1);
-    fTree->SetBranchStatus("Particles.fP.fY", 1);
-    fTree->SetBranchStatus("Particles.fP.fZ", 1);
-    fTree->SetBranchStatus("Particles.fE", 1);
-    fTree->SetBranchStatus("Particles.fV.fX", 1);
-    fTree->SetBranchStatus("Particles.fV.fY", 1);
-    fTree->SetBranchStatus("Particles.fV.fZ", 1);
-    fTree->SetBranchStatus("Particles.pid", 1);
-    fTree->SetBranchStatus("Particles.daughterIndex", 1);
+    if(fTree->GetBranchStatus("Particles.TLorentzVector"))
+    {
+        // set branch status
+        fTree->SetBranchStatus("*", 0);
+        fTree->SetBranchStatus("Npart", 1);
+        fTree->SetBranchStatus("Particles", 1);
+        fTree->SetBranchStatus("Particles.TLorentzVector", 1);
+        fTree->SetBranchStatus("Particles.fV", 1);
+        fTree->SetBranchStatus("Particles.pid", 1);
+        fTree->SetBranchStatus("Particles.daughterIndex", 1);
 
-    // link number of particles
-    LinkBranch("Npart", &fNPart);
+        // link number of particles
+        LinkBranch("Npart", &fNPart);
 
-    // link particle variables
-    LinkBranch("Particles", fPartTop);
-    LinkBranch("Particles.fP.fX", fPartPx);
-    LinkBranch("Particles.fP.fY", fPartPy);
-    LinkBranch("Particles.fP.fZ", fPartPz);
-    LinkBranch("Particles.fE", fPartE);
-    LinkBranch("Particles.fV.fX", fPartX);
-    LinkBranch("Particles.fV.fY", fPartY);
-    LinkBranch("Particles.fV.fZ", fPartZ);
-    LinkBranch("Particles.pid", fPartID);
-    LinkBranch("Particles.daughterIndex", fPartDtrIdx);
+        // link particle variables
+        LinkBranch("Particles", fPartTop);
+        LinkBranch("Particles.TLorentzVector", &fPartP);
+        LinkBranch("Particles.fV", &fPartV);
+        LinkBranch("Particles.pid", fPartID);
+        LinkBranch("Particles.daughterIndex", fPartDtrIdx);
 
-    // check for cocktail
-    if (fTree->GetMinimum("Npart") != fTree->GetMaximum("Npart"))
-        fType = kPlutoCocktail;
+        fType = kPluto6;
+
+        // check for cocktail
+        if (fTree->GetMinimum("Npart") != fTree->GetMaximum("Npart"))
+            fType = kPluto6Cocktail;
+    }
+    else
+    {
+        // set branch status
+        fTree->SetBranchStatus("*", 0);
+        fTree->SetBranchStatus("Npart", 1);
+        fTree->SetBranchStatus("Particles", 1);
+        fTree->SetBranchStatus("Particles.fP.fX", 1);
+        fTree->SetBranchStatus("Particles.fP.fY", 1);
+        fTree->SetBranchStatus("Particles.fP.fZ", 1);
+        fTree->SetBranchStatus("Particles.fE", 1);
+        fTree->SetBranchStatus("Particles.fV.fX", 1);
+        fTree->SetBranchStatus("Particles.fV.fY", 1);
+        fTree->SetBranchStatus("Particles.fV.fZ", 1);
+        fTree->SetBranchStatus("Particles.pid", 1);
+        fTree->SetBranchStatus("Particles.daughterIndex", 1);
+
+        // link number of particles
+        LinkBranch("Npart", &fNPart);
+
+        // link particle variables
+        LinkBranch("Particles", fPartTop);
+        LinkBranch("Particles.fP.fX", fPartPx);
+        LinkBranch("Particles.fP.fY", fPartPy);
+        LinkBranch("Particles.fP.fZ", fPartPz);
+        LinkBranch("Particles.fE", fPartE);
+        LinkBranch("Particles.fV.fX", fPartX);
+        LinkBranch("Particles.fV.fY", fPartY);
+        LinkBranch("Particles.fV.fZ", fPartZ);
+        LinkBranch("Particles.pid", fPartID);
+        LinkBranch("Particles.daughterIndex", fPartDtrIdx);
+
+        // check for cocktail
+        if (fTree->GetMinimum("Npart") != fTree->GetMaximum("Npart"))
+            fType = kPlutoCocktail;
+    }
 
     return true;
 }
@@ -170,6 +206,18 @@ G4bool A2FileGeneratorPluto::ReadEvent(G4int event)
         // set event particle
         A2GenParticle_t part;
         part.fDef = PlutoToG4(fPartID[i]);
+        if(fType == kPluto6 || fType == kPluto6Cocktail)
+        {
+            TLorentzVector* lv = (TLorentzVector*)fPartP->At(i);
+            //fPartPx[i] = lv->X();
+            //fPartPy[i] = lv->Y();
+            //fPartPz[i] = lv->Z();
+            //fPartE[i] = lv->E();
+            TVector3* v3 = (TVector3*)fPartV->At(i);
+            fPartX[i] = v3->X();
+            fPartY[i] = v3->Y();
+            fPartZ[i] = v3->Z();
+        }
         part.fP.set(fPartPx[i]*GeV, fPartPy[i]*GeV, fPartPz[i]*GeV);
         part.fE = fPartE[i]*GeV;
         part.SetCorrectMass();

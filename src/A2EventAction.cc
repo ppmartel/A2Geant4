@@ -290,7 +290,7 @@ void  A2EventAction::CloseOutput(){
   if (fPGA->GetFileGen())
   {
     trackedPart = "";
-    if (fPGA->GetFileGen()->GetType() == A2FileGenerator::kPlutoCocktail)
+    if (fPGA->GetFileGen()->GetType() == A2FileGenerator::kPlutoCocktail || fPGA->GetFileGen()->GetType() == A2FileGenerator::kPluto6Cocktail)
       trackedPart = "all stable (Pluto cocktail)";
     else
     {

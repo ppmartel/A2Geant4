@@ -32,7 +32,9 @@ public:
         kNone,
         kMkin,
         kPluto,
-        kPlutoCocktail
+        kPluto6,
+        kPlutoCocktail,
+        kPluto6Cocktail
     };
 
 protected:

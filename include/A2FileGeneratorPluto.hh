@@ -5,6 +5,8 @@
 #define A2FileGeneratorPluto_h 1
 
 #include "Rtypes.h"
+#include "TLorentzVector.h"
+#include "TClonesArray.h"
 
 #include "A2FileGeneratorTree.hh"
 
@@ -14,10 +16,12 @@ class A2FileGeneratorPluto : public A2FileGeneratorTree
 protected:
     Int_t fNPart;           // number of particles
     Int_t* fPartTop;        //[fNPart] particle top branch
+    TClonesArray* fPartP;   //[fNPart] particle 4-momentum
     Double_t* fPartPx;      //[fNPart] particle x-momentum
     Double_t* fPartPy;      //[fNPart] particle y-momentum
     Double_t* fPartPz;      //[fNPart] particle z-momentum
     Double_t* fPartE;       //[fNPart] particle energy
+    TClonesArray* fPartV;   //[fNPart] particle 3-vertex
     Double_t* fPartX;       //[fNPart] particle x-vertex
     Double_t* fPartY;       //[fNPart] particle y-vertex
     Double_t* fPartZ;       //[fNPart] particle z-vertex
