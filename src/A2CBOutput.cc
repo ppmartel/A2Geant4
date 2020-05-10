@@ -54,6 +54,9 @@ A2CBOutput::A2CBOutput(){
     ftofz=new Float_t[fToFTot];
   }
 
+  fIsGiBUU = false;
+  if (fPGA->GetFileGen())
+    fIsGiBUU = (fPGA->GetFileGen()->GetType() == A2FileGenerator::kGiBUU);
   fweight = 1;
 }
 A2CBOutput::~A2CBOutput(){
@@ -131,7 +134,7 @@ void A2CBOutput::SetBranches(){
   fTree->Branch("ipiz",fipiz,"fipiz[fnpiz]/I",basket);
   fTree->Branch("epiz",fepiz,"fepiz[fnpiz]/F",basket);
   fTree->Branch("tpiz",ftpiz,"ftpiz[fnpiz]/F",basket);
-  if (fPGA->GetFileGen()->GetType() == A2FileGenerator::kGiBUU)
+  if (fIsGiBUU)
     fTree->Branch("weight",&fweight,"fweight/F",basket);
  }
 void A2CBOutput::WriteHit(G4HCofThisEvent* HitsColl){
@@ -248,5 +251,5 @@ void A2CBOutput::WriteGenInput(){
     fplab[i]=fGenLorentzVec[i]->Rho()/GeV;
     fidpart[i]=fGenPartType[i];
   }
-  fweight = fPGA->GetFileGen()->GetWeight();
+  if (fIsGiBUU) fweight = fPGA->GetFileGen()->GetWeight();
 }

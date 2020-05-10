@@ -86,6 +86,7 @@ protected:
   Float_t fepiz[MAXSIZE_PIZZA]; //hit sector energy deposits
   Float_t ftpiz[MAXSIZE_PIZZA]; //hit sector time
 
+  G4bool fIsGiBUU; // Is this a GiBUU file
   Float_t fweight; // event weight
 
   TLorentzVector** fGenLorentzVec;
