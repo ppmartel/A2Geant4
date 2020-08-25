@@ -24,6 +24,7 @@
 #include "G4PhysicalConstants.hh"
 
 #include "A2SD.hh" //NEW
+#include "A2VisSD.hh" //NEW
 
 //constructor
 A2ActiveHe3::A2ActiveHe3() {
@@ -51,8 +52,10 @@ A2ActiveHe3::A2ActiveHe3() {
   fPMTPhysic = NULL;
   fEpoxyPhysic = NULL;
 
-  fAHe3SD=NULL; //NEW
-  
+  fRegionAHe3 = new G4Region("AHe3");
+  fAHe3SD = NULL; //NEW
+  fAHe3VisSD = NULL; //NEW
+
   //initiate nist manager
   fNistManager=G4NistManager::Instance();
 
@@ -74,7 +77,9 @@ A2ActiveHe3::A2ActiveHe3() {
 //destructor
 A2ActiveHe3::~A2ActiveHe3() {
   //delete Rot;
+  if(fRegionAHe3) delete fRegionAHe3; //remove the sensitive detector
   if(fAHe3SD) delete fAHe3SD; //remove the sensitive detector
+  if(fAHe3VisSD) delete fAHe3VisSD; //remove the sensitive detector
 }
 
 /**********************************************************
@@ -1316,8 +1321,9 @@ void A2ActiveHe3::MakeSensitiveDetector(){
         G4SDManager* SDman = G4SDManager::GetSDMpointer();
         fAHe3SD = new A2SD("AHe3SD",1); //not sure what Nelements should actually be
         //right now I have one, since I believe it is just the one volume that scintillates
-        fHeOutsideTeflonLogic->SetSensitiveDetector(fAHe3SD); //John Annand's code implies this is the volume that should be set as a sensitive detector
         SDman->AddNewDetector(fAHe3SD);
+        fHeOutsideTeflonLogic->SetSensitiveDetector(fAHe3SD); //John Annand's code implies this is the volume that should be set as a sensitive detector
+        fRegionAHe3->AddRootLogicalVolume(fHeOutsideTeflonLogic);
         }
 }
 

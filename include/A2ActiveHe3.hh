@@ -13,7 +13,9 @@
 #include "G4Material.hh"
 #include "G4MaterialPropertiesTable.hh"
 #include "G4NistManager.hh"
+#include "G4Region.hh"
 #include "A2SD.hh"
+#include "A2VisSD.hh"
 
 
 class A2ActiveHe3: public A2Target
@@ -58,7 +60,9 @@ private:
   G4NistManager* fNistManager;
   G4bool fIsOverlapVol;
 
+  G4Region* fRegionAHe3; //NEW
   A2SD* fAHe3SD; //NEW
+  A2VisSD* fAHe3VisSD; //NEW
 
   //------------------------------------------------------------------------
   //booleans controlling detector construction and simulation

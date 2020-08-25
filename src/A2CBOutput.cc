@@ -54,6 +54,10 @@ A2CBOutput::A2CBOutput(){
     ftofz=new Float_t[fToFTot];
   }
 
+  fhe3i = new Int_t[10]; //hit index ????
+  fhe3e = new Float_t[10]; //hit energy deposits
+  fhe3t = new Float_t[10]; //hit time
+
   fIsGiBUU = false;
   if (fPGA->GetFileGen())
     fIsGiBUU = (fPGA->GetFileGen()->GetType() == A2FileGenerator::kGiBUU);
