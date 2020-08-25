@@ -13,6 +13,7 @@
 #include "G4Material.hh"
 #include "G4MaterialPropertiesTable.hh"
 #include "G4NistManager.hh"
+#include "A2SD.hh"
 
 
 class A2ActiveHe3: public A2Target
@@ -46,6 +47,7 @@ public:
   void SetOpticalProperties();
   void SetIsOverlapVol(G4bool isOv){ fIsOverlapVol = isOv; }
   void ReadParameters(const char*);
+  void MakeSensitiveDetector(); //NEW
 
   //this places all sub-parts into fMyLogic
   void PlaceParts();
@@ -55,6 +57,8 @@ private:
 
   G4NistManager* fNistManager;
   G4bool fIsOverlapVol;
+
+  A2SD* fAHe3SD; //NEW
 
   //------------------------------------------------------------------------
   //booleans controlling detector construction and simulation

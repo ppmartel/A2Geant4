@@ -130,6 +130,14 @@ void A2CBOutput::SetBranches(){
     fTree->Branch("tofy",ftofy,"ftofy[fntof]/F",basket);
     fTree->Branch("tofz",ftofz,"ftofz[fntof]/F",basket);
   }
+  //NEW
+  //Active He3 target stuff
+  //if(A2Target=="ActiveHe3"){
+    fTree->Branch("he3n",&fhe3n,"fhe3n/I",basket);
+    fTree->Branch("he3i",fhe3i,"fhe3i[fhe3n]/I",basket);
+    fTree->Branch("he3e",fhe3e,"fhe3e[fhe3n]/F",basket);
+    fTree->Branch("he3t",fhe3t,"fhe3t[fhe3n]/F",basket);
+  //}
   fTree->Branch("npiz",&fnpiz,"fnpiz/I",basket);
   fTree->Branch("ipiz",fipiz,"fipiz[fnpiz]/I",basket);
   fTree->Branch("epiz",fepiz,"fepiz[fnpiz]/F",basket);
@@ -141,7 +149,7 @@ void A2CBOutput::WriteHit(G4HCofThisEvent* HitsColl){
   G4int CollSize=HitsColl->GetNumberOfCollections();
   //G4cout<<"Collection size "<<CollSize<<" "<<HitsColl->GetHC(0)->GetName()<<" "<<HitsColl->GetHC(1)->GetName()<<G4endl;
   //G4cout<<"Collection size "<<CollSize<<G4endl;
-  fnhits=fntaps=fnvtaps=fvhits=fntof=fnpiz=fnmwpc=0;
+  fnhits=fntaps=fnvtaps=fvhits=fntof=fnpiz=fnmwpc=fhe3n=0;
   fetot=0;
   G4int hci=0;
   for(G4int i=0;i<CollSize;i++){
@@ -225,6 +233,20 @@ void A2CBOutput::WriteHit(G4HCofThisEvent* HitsColl){
 	fepiz[ii]=hit->GetEdep()/GeV;
 	ftpiz[ii]=hit->GetTime()/ns;
 	fipiz[ii]=hit->GetID();
+      }
+    }
+    //NEW
+    //Assume the detector can identify time and energy of each hit
+    if(hc->GetName()=="A2SDHitsAHe3SD"){
+      fhe3n=hc_nhits;
+      for(Int_t ii=0;ii<fhe3n;ii++){
+	A2Hit* hit=static_cast<A2Hit*>(hc->GetHit(ii));
+	fhe3e[ii]=hit->GetEdep()/GeV;
+	fhe3t[ii]=hit->GetTime()/ns;
+	//fhe3x[ii]=hit->GetPos().x()/cm;
+	//fhe3y[ii]=hit->GetPos().y()/cm;
+	//fhe3z[ii]=hit->GetPos().z()/cm;
+	fhe3i[ii]=hit->GetID();
       }
     }
   }

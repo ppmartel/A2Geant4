@@ -81,6 +81,16 @@ protected:
   Float_t *ftofy; //y hit position
   Float_t *ftofz; //z hit position
 
+  //NEW
+  //Active He3 Hits
+  Int_t fhe3n; //total number of active He3 hits
+  Int_t *fhe3i; //hit index ????
+  Float_t *fhe3e; //hit energy deposits
+  Float_t *fhe3t; //hit time
+  //Float_t *fhe3x; //x position
+  //Float_t *fhe3y; //y position
+  //Float_t *fhe3z; //z position
+  
   Int_t fnpiz; //Number of hits in Pizza detector
   Int_t fipiz[MAXSIZE_PIZZA]; //hit sector indexes
   Float_t fepiz[MAXSIZE_PIZZA]; //hit sector energy deposits

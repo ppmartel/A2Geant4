@@ -23,6 +23,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4PhysicalConstants.hh"
 
+#include "A2SD.hh" //NEW
 
 //constructor
 A2ActiveHe3::A2ActiveHe3() {
@@ -50,6 +51,8 @@ A2ActiveHe3::A2ActiveHe3() {
   fPMTPhysic = NULL;
   fEpoxyPhysic = NULL;
 
+  fAHe3SD=NULL; //NEW
+  
   //initiate nist manager
   fNistManager=G4NistManager::Instance();
 
@@ -71,6 +74,7 @@ A2ActiveHe3::A2ActiveHe3() {
 //destructor
 A2ActiveHe3::~A2ActiveHe3() {
   //delete Rot;
+  if(fAHe3SD) delete fAHe3SD; //remove the sensitive detector
 }
 
 /**********************************************************
@@ -87,6 +91,7 @@ G4VPhysicalVolume* A2ActiveHe3::Construct(G4LogicalVolume* MotherLogical, G4doub
   DefineMaterials();
   //call functions that build parts of the detector
   MakeVessel();                    //builds and places parts inside fVesselLogic
+  
   if(fIsWLS){
     MakeWLS();                       //builds wavelength shifting plates
   }
@@ -107,10 +112,14 @@ G4VPhysicalVolume* A2ActiveHe3::Construct(G4LogicalVolume* MotherLogical, G4doub
     SetOpticalProperties(); //set optical properties and surfaces
   }
   else { G4cout << "A2ActiveHe3::Construct() Optical properties not used." << G4endl; }
+  //
 
   //place the separate parts into main logic of this detector 
   PlaceParts();
 
+  //construct the sensitive detector
+  MakeSensitiveDetector(); //NEW
+  
   //place fMyLogic into MotherLogical
   fMyPhysi = new G4PVPlacement(0, G4ThreeVector(0,0,0) ,fMyLogic,"ActiveHe3",fMotherLogic,false,1,fIsOverlapVol);
 
@@ -269,11 +278,17 @@ void A2ActiveHe3::MakeVessel() {
 
   fVesselLogic->SetVisAttributes(G4VisAttributes::Invisible);
   LMainCell->SetVisAttributes(grey);
+  //LMainCell->SetVisAttributes(G4VisAttributes::Invisible);
   LExtCellU->SetVisAttributes(grey);
+  //LExtCellU->SetVisAttributes(G4VisAttributes::Invisible);
   LExtCellD->SetVisAttributes(grey);
+  //LExtCellD->SetVisAttributes(G4VisAttributes::Invisible);
   LMainCellEnd->SetVisAttributes(grey);
+  //LMainCellEnd->SetVisAttributes(G4VisAttributes::Invisible);
   LBerylliumWindow->SetVisAttributes(lblue);
+  //LBerylliumWindow->SetVisAttributes(G4VisAttributes::Invisible);
   fHeOutsideTeflonLogic->SetVisAttributes(cyan);
+  //fHeOutsideTeflonLogic->SetVisAttributes(G4VisAttributes::Invisible);
 
   //------------------------------------------------------------------------------
   //Create placements of the logical volumes
@@ -1286,3 +1301,23 @@ void A2ActiveHe3::ReadParameters(const char* file)
     }
   }
 }
+
+
+/**********************************************************
+
+This function builds the sensitive detector and places
+it to HeOutsideTeflonLogic 
+
+**********************************************************/
+
+//NEW
+void A2ActiveHe3::MakeSensitiveDetector(){
+        if(!fAHe3SD){
+        G4SDManager* SDman = G4SDManager::GetSDMpointer();
+        fAHe3SD = new A2SD("AHe3SD",1); //not sure what Nelements should actually be
+        //right now I have one, since I believe it is just the one volume that scintillates
+        fHeOutsideTeflonLogic->SetSensitiveDetector(fAHe3SD); //John Annand's code implies this is the volume that should be set as a sensitive detector
+        SDman->AddNewDetector(fAHe3SD);
+        }
+}
+
