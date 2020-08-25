@@ -1171,7 +1171,7 @@ void A2ActiveHe3::DefineMaterials()
 {
   G4double density, fractionmass;
   G4int ncomponents;
-  G4double pressure, temperature, a, z;
+  //G4double pressure, temperature, a, z;
 
   G4Material* BerylliumW = new G4Material("ATBerylliumW", density = 1.8480*g/cm3, ncomponents = 7);
   BerylliumW->AddElement(fNistManager->FindOrBuildElement(14), 0.06*perCent);      //Si
@@ -1253,9 +1253,9 @@ void A2ActiveHe3::ReadParameters(const char* file)
   G4int ierr = 0;
   char line[256];
   char delim[64];
-  char hname[32];
-  char fname[32];
-  G4double x,y,z,dx,dy,dz;
+  //char hname[32];
+  //char fname[32];
+  //G4double x,y,z,dx,dy,dz;
   FILE* pdata;
   if( (pdata = fopen(file,"r")) == NULL ){
     printf("Error opening detector parameter file: %s\n",file);
