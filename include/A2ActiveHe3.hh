@@ -47,7 +47,7 @@ public:
   void MakeMylarSections(G4int nrofsections);
   void DefineMaterials();
   void SetOpticalProperties();
-  void SetIsOverlapVol(G4bool isOv){ fIsOverlapVol = isOv; }
+  void SetIsOverlapVol(G4int isOv){ fIsOverlapVol = isOv; }
   void ReadParameters(const char*);
   void MakeSensitiveDetector(); //NEW
 
@@ -58,7 +58,7 @@ public:
 private:
 
   G4NistManager* fNistManager;
-  G4bool fIsOverlapVol;
+  G4int fIsOverlapVol;
 
   G4Region* fRegionAHe3; //NEW
   A2SD* fAHe3SD; //NEW
