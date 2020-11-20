@@ -49,7 +49,7 @@ public:
   void SetOpticalProperties();
   void SetIsOverlapVol(G4int isOv){ fIsOverlapVol = isOv; }
   void ReadParameters(const char*);
-  void MakeSensitiveDetector(); //NEW
+  void MakeSensitiveDetector();
 
   //this places all sub-parts into fMyLogic
   void PlaceParts();
@@ -60,9 +60,9 @@ private:
   G4NistManager* fNistManager;
   G4int fIsOverlapVol;
 
-  G4Region* fRegionAHe3; //NEW
-  A2SD* fAHe3SD; //NEW
-  A2VisSD* fAHe3VisSD; //NEW
+  G4Region* fRegionAHe3;
+  A2SD* fAHe3SD;
+  A2VisSD* fAHe3VisSD;
 
   //------------------------------------------------------------------------
   //booleans controlling detector construction and simulation

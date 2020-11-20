@@ -53,8 +53,8 @@ A2ActiveHe3::A2ActiveHe3() {
     fEpoxyPhysic = NULL;
 
     fRegionAHe3 = new G4Region("AHe3");
-    fAHe3SD = NULL; //NEW
-    fAHe3VisSD = NULL; //NEW
+    fAHe3SD = NULL;
+    fAHe3VisSD = NULL;
 
     //initiate nist manager
     fNistManager=G4NistManager::Instance();
@@ -123,7 +123,7 @@ G4VPhysicalVolume* A2ActiveHe3::Construct(G4LogicalVolume* MotherLogical, G4doub
     PlaceParts();
 
     //construct the sensitive detector
-    MakeSensitiveDetector(); //NEW
+    MakeSensitiveDetector();
 
     //place fMyLogic into MotherLogical
     fMyPhysi = new G4PVPlacement(0, G4ThreeVector(0,0,Z0) ,fMyLogic,"ActiveHe3",fMotherLogic,false,1,fIsOverlapVol);
