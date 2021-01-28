@@ -59,17 +59,17 @@ A2PrimaryGeneratorMessenger::A2PrimaryGeneratorMessenger(
   SetTmaxCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
   SetTmaxCmd->SetUnitCategory("Energy");
 
-  SetThetaminCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetThetaMin",this);
-  SetThetaminCmd->SetGuidance("Set the minimum particle theta for the phase space generator");
-  SetThetaminCmd->SetParameterName("Thetamin",false);
-  SetThetaminCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
-  SetThetaminCmd->SetUnitCategory("Angle");
+  SetThetaMinCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetThetaMin",this);
+  SetThetaMinCmd->SetGuidance("Set the minimum particle theta for the phase space generator");
+  SetThetaMinCmd->SetParameterName("ThetaMin",false);
+  SetThetaMinCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+  SetThetaMinCmd->SetUnitCategory("Angle");
 
-  SetThetamaxCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetThetaMax",this);
-  SetThetamaxCmd->SetGuidance("Set the maximum particle theta for the phase space generator");
-  SetThetamaxCmd->SetParameterName("Thetamax",false);
-  SetThetamaxCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
-  SetThetamaxCmd->SetUnitCategory("Angle");
+  SetThetaMaxCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetThetaMax",this);
+  SetThetaMaxCmd->SetGuidance("Set the maximum particle theta for the phase space generator");
+  SetThetaMaxCmd->SetParameterName("ThetaMax",false);
+  SetThetaMaxCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+  SetThetaMaxCmd->SetUnitCategory("Angle");
 
   SetBeamEnergyCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetBeamEnergy",this);
   SetBeamEnergyCmd->SetGuidance("Set the energy of the photon beam");
@@ -132,8 +132,8 @@ A2PrimaryGeneratorMessenger::~A2PrimaryGeneratorMessenger()
   delete SetTrackCmd;
   delete SetTminCmd;
   delete SetTmaxCmd;
-  delete SetThetaminCmd;
-  delete SetThetamaxCmd;
+  delete SetThetaMinCmd;
+  delete SetThetaMaxCmd;
   delete SetModeCmd;
   delete SetSeedCmd;
   delete SetBeamEnergyCmd;
@@ -175,11 +175,11 @@ void A2PrimaryGeneratorMessenger::SetNewValue(
   if( command == SetTmaxCmd )
      { A2Action->SetTmax(SetTmaxCmd->GetNewDoubleValue(newValue));}
  
-  if( command == SetThetaminCmd )
-     { A2Action->SetThetamin(SetThetaminCmd->GetNewDoubleValue(newValue));}
+  if( command == SetThetaMinCmd )
+     { A2Action->SetThetaMin(SetThetaMinCmd->GetNewDoubleValue(newValue));}
   
-  if( command == SetThetamaxCmd )
-     { A2Action->SetThetamax(SetThetamaxCmd->GetNewDoubleValue(newValue));}
+  if( command == SetThetaMaxCmd )
+     { A2Action->SetThetaMax(SetThetaMaxCmd->GetNewDoubleValue(newValue));}
  
    if( command == SetBeamEnergyCmd )
      { A2Action->SetBeamEnergy(SetBeamEnergyCmd->GetNewDoubleValue(newValue));}

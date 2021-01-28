@@ -32,8 +32,8 @@ A2PrimaryGeneratorAction::A2PrimaryGeneratorAction()
   //default phase space limits
   fTmin=0;
   fTmax=400*MeV;
-  fThetamin=0;
-  fThetamax=180*deg;
+  fThetaMin=0;
+  fThetaMax=180*deg;
   fBeamEnergy=0;
   fBeamXSigma=0.5*cm;
   fBeamYSigma=0.5*cm;
@@ -267,7 +267,7 @@ void A2PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 void A2PrimaryGeneratorAction::PhaseSpaceGenerator(G4Event* anEvent){
   if(fGenPartType[0]==-1){fGenPartType[0]= PDGtoG3(fParticleGun->GetParticleDefinition()->GetPDGEncoding());G4cout<<"P type "<<fGenPartType[0]<<G4endl;}
   //4-momenta
-  G4float theta=acos((cos(fThetamax)-cos(fThetamin))*G4UniformRand()+cos(fThetamin));
+  G4float theta=acos((cos(fThetaMax)-cos(fThetaMin))*G4UniformRand()+cos(fThetaMin));
   G4float phi=2*3.141592653589*G4UniformRand();
   G4float T=fTmin+(fTmax-fTmin)*G4UniformRand();
   G4float Mass=fParticleGun->GetParticleDefinition()->GetPDGMass();
@@ -320,7 +320,7 @@ void A2PrimaryGeneratorAction::OverlapGenerator(G4Event* anEvent){
   fGenPosition[0]=p3.x()/cm;
   fGenPosition[1]=p3.y()/cm;
   fGenPosition[2]=p3.z()/cm;
-  G4float theta=acos((cos(fThetamax)-cos(fThetamin))*G4UniformRand()+cos(fThetamin));
+  G4float theta=acos((cos(fThetaMax)-cos(fThetaMin))*G4UniformRand()+cos(fThetaMin));
   G4float phi=2*3.141592653589*G4UniformRand();
   G4float T=fTmin+(fTmax-fTmin)*G4UniformRand();
   G4float Mass=fParticleGun->GetParticleDefinition()->GetPDGMass();
