@@ -82,10 +82,12 @@ public:
 private:
   void PhaseSpaceGenerator(G4Event* anEvent);
   void OverlapGenerator(G4Event* anEvent);
-  G4float fTmin;       //Min phase spce kinetic energy
+  G4float fTmin;       //Min phase space kinetic energy
   G4float fTmax;       //Max phase space kinetic energy
-  G4float fThetaMin;       //Min phase spce angle
+  G4float fThetaMin;       //Min phase space angle
   G4float fThetaMax;       //Max phase space angle
+  G4float fPhiMin;       //Min phase space phi angle
+  G4float fPhiMax;       //Max phase space phi angle
   G4float fBeamEnergy;    //beam energy
   G4float fBeamXSigma;    //beam X width
   G4float fBeamYSigma;    //beam X width
@@ -101,6 +103,8 @@ public:
   void SetTmax(G4float max){fTmax=max;}
   void SetThetaMin(G4float min){fThetaMin=min;}
   void SetThetaMax(G4float max){fThetaMax=max;}
+  void SetPhiMin(G4float min){fPhiMin=min;}
+  void SetPhiMax(G4float max){fPhiMax=max;}
   void SetBeamEnergy(G4float energy){fBeamEnergy=energy;}
   void SetBeamXSigma(G4float sigma){fBeamXSigma=sigma;}
   void SetBeamYSigma(G4float sigma){fBeamYSigma=sigma;}

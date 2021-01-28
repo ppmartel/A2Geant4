@@ -71,6 +71,18 @@ A2PrimaryGeneratorMessenger::A2PrimaryGeneratorMessenger(
   SetThetaMaxCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
   SetThetaMaxCmd->SetUnitCategory("Angle");
 
+  SetPhiMinCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetPhiMin",this);
+  SetPhiMinCmd->SetGuidance("Set the minimum particle phi for the phase space generator");
+  SetPhiMinCmd->SetParameterName("PhiMin",false);
+  SetPhiMinCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+  SetPhiMinCmd->SetUnitCategory("Angle");
+
+  SetPhiMaxCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetPhiMax",this);
+  SetPhiMaxCmd->SetGuidance("Set the maximum particle phi for the phase space generator");
+  SetPhiMaxCmd->SetParameterName("PhiMax",false);
+  SetPhiMaxCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+  SetPhiMaxCmd->SetUnitCategory("Angle");
+
   SetBeamEnergyCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetBeamEnergy",this);
   SetBeamEnergyCmd->SetGuidance("Set the energy of the photon beam");
   SetBeamEnergyCmd->SetParameterName("BeamEnergy",false);
@@ -134,6 +146,8 @@ A2PrimaryGeneratorMessenger::~A2PrimaryGeneratorMessenger()
   delete SetTmaxCmd;
   delete SetThetaMinCmd;
   delete SetThetaMaxCmd;
+  delete SetPhiMinCmd;
+  delete SetPhiMaxCmd;
   delete SetModeCmd;
   delete SetSeedCmd;
   delete SetBeamEnergyCmd;
@@ -180,6 +194,12 @@ void A2PrimaryGeneratorMessenger::SetNewValue(
   
   if( command == SetThetaMaxCmd )
      { A2Action->SetThetaMax(SetThetaMaxCmd->GetNewDoubleValue(newValue));}
+ 
+  if( command == SetPhiMinCmd )
+     { A2Action->SetPhiMin(SetPhiMinCmd->GetNewDoubleValue(newValue));}
+  
+  if( command == SetPhiMaxCmd )
+     { A2Action->SetPhiMax(SetPhiMaxCmd->GetNewDoubleValue(newValue));}
  
    if( command == SetBeamEnergyCmd )
      { A2Action->SetBeamEnergy(SetBeamEnergyCmd->GetNewDoubleValue(newValue));}
