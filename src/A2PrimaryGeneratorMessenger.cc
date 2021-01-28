@@ -61,13 +61,13 @@ A2PrimaryGeneratorMessenger::A2PrimaryGeneratorMessenger(
 
   SetThetaminCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetThetaMin",this);
   SetThetaminCmd->SetGuidance("Set the minimum particle theta for the phase space generator");
-  SetThetaminCmd->SetParameterName("Tmin",false);
+  SetThetaminCmd->SetParameterName("Thetamin",false);
   SetThetaminCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
   SetThetaminCmd->SetUnitCategory("Angle");
 
   SetThetamaxCmd = new G4UIcmdWithADoubleAndUnit("/A2/generator/SetThetaMax",this);
   SetThetamaxCmd->SetGuidance("Set the maximum particle theta for the phase space generator");
-  SetThetamaxCmd->SetParameterName("Tmax",false);
+  SetThetamaxCmd->SetParameterName("Thetamax",false);
   SetThetamaxCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
   SetThetamaxCmd->SetUnitCategory("Angle");
 
