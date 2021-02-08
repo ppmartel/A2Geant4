@@ -267,12 +267,20 @@ void A2ActiveHe3::MakeVessel() {
              fNistManager->FindOrBuildMaterial("G4_Be"), //material
              "LogicBerylliumWindow");
 
-    fHeOutsideTeflonLogic = new G4LogicalVolume
-            (HeOutsideTeflon,
-             fNistManager->FindOrBuildMaterial("ATGasMix"),
-             "LogicHeOutsideTeflon"
-             );
-
+    if(fIsWLS)
+    {
+        fHeOutsideTeflonLogic = new G4LogicalVolume
+                (HeOutsideTeflon,
+                 fNistManager->FindOrBuildMaterial("ATGasPure"),
+                 "LogicHeOutsideTeflon");
+    }
+    else
+    {
+        fHeOutsideTeflonLogic = new G4LogicalVolume
+                (HeOutsideTeflon,
+                 fNistManager->FindOrBuildMaterial("ATGasMix"),
+                 "LogicHeOutsideTeflon");
+    }
     //------------------------------------------------------------------------------
     //Set visual attributes
     //------------------------------------------------------------------------------
@@ -282,16 +290,16 @@ void A2ActiveHe3::MakeVessel() {
     G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0)  );
 
     fVesselLogic->SetVisAttributes(G4VisAttributes::Invisible);
-    LMainCell->SetVisAttributes(grey);
-    //LMainCell->SetVisAttributes(G4VisAttributes::Invisible);
-    LExtCellU->SetVisAttributes(grey);
-    //LExtCellU->SetVisAttributes(G4VisAttributes::Invisible);
-    LExtCellD->SetVisAttributes(grey);
-    //LExtCellD->SetVisAttributes(G4VisAttributes::Invisible);
-    LMainCellEnd->SetVisAttributes(grey);
-    //LMainCellEnd->SetVisAttributes(G4VisAttributes::Invisible);
-    LBerylliumWindow->SetVisAttributes(lblue);
-    //LBerylliumWindow->SetVisAttributes(G4VisAttributes::Invisible);
+    //LMainCell->SetVisAttributes(grey);
+    LMainCell->SetVisAttributes(G4VisAttributes::Invisible);
+    //LExtCellU->SetVisAttributes(grey);
+    LExtCellU->SetVisAttributes(G4VisAttributes::Invisible);
+    //LExtCellD->SetVisAttributes(grey);
+    LExtCellD->SetVisAttributes(G4VisAttributes::Invisible);
+    //LMainCellEnd->SetVisAttributes(grey);
+    LMainCellEnd->SetVisAttributes(G4VisAttributes::Invisible);
+    //LBerylliumWindow->SetVisAttributes(lblue);
+    LBerylliumWindow->SetVisAttributes(G4VisAttributes::Invisible);
     fHeOutsideTeflonLogic->SetVisAttributes(cyan);
     //fHeOutsideTeflonLogic->SetVisAttributes(G4VisAttributes::Invisible);
 
@@ -383,9 +391,8 @@ void A2ActiveHe3::MakeWLS()
     G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
     G4double d1 = d0 - fWLSthick*tan(th/2);
     G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
-    fWLSLogic = new G4LogicalVolume
-            (wls,fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"),
-             "LogicWLS");
+    //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
+    fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
     G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
     fWLSLogic->SetVisAttributes(blue);
 }
@@ -1022,6 +1029,53 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     //add these properties to GasMix
     fNistManager->FindOrBuildMaterial("ATGasMix")->SetMaterialPropertiesTable(HeN_mt);
+    fNistManager->FindOrBuildMaterial("ATGasPure")->SetMaterialPropertiesTable(HeN_mt);
+
+    G4double photonEnergy[] =
+    {2.00*eV,2.03*eV,2.06*eV,2.09*eV,2.12*eV,2.15*eV,2.18*eV,2.21*eV,2.24*eV,2.27*eV,
+     2.30*eV,2.33*eV,2.36*eV,2.39*eV,2.42*eV,2.45*eV,2.48*eV,2.51*eV,2.54*eV,2.57*eV,
+     2.60*eV,2.63*eV,2.66*eV,2.69*eV,2.72*eV,2.75*eV,2.78*eV,2.81*eV,2.84*eV,2.87*eV,
+     2.90*eV,2.93*eV,2.96*eV,2.99*eV,3.02*eV,3.05*eV,3.08*eV,3.11*eV,3.14*eV,3.17*eV,
+     3.20*eV,3.23*eV,3.26*eV,3.29*eV,3.32*eV,3.35*eV,3.38*eV,3.41*eV,3.44*eV,3.47*eV};
+
+    const G4int nEntries = sizeof(photonEnergy)/sizeof(G4double);
+
+    G4double refractiveIndexWLSfiber[] =
+    { 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60};
+
+    assert(sizeof(refractiveIndexWLSfiber) == sizeof(photonEnergy));
+
+    G4double absWLSfiber[] =
+    {5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,
+     5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,
+     5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,1.10*m,
+     1.10*m,1.10*m,1.10*m,1.10*m,1.10*m,1.10*m, 1.*mm, 1.*mm, 1.*mm, 1.*mm,
+      1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm};
+
+    assert(sizeof(absWLSfiber) == sizeof(photonEnergy));
+
+    G4double emissionFib[] =
+    {0.05, 0.10, 0.30, 0.50, 0.75, 1.00, 1.50, 1.85, 2.30, 2.75,
+     3.25, 3.80, 4.50, 5.20, 6.00, 7.00, 8.50, 9.50, 11.1, 12.4,
+     12.9, 13.0, 12.8, 12.3, 11.1, 11.0, 12.0, 11.0, 17.0, 16.9,
+     15.0, 9.00, 2.50, 1.00, 0.05, 0.00, 0.00, 0.00, 0.00, 0.00,
+     0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
+
+    assert(sizeof(emissionFib) == sizeof(photonEnergy));
+
+    // Add entries into properties table
+    G4MaterialPropertiesTable* WLS_mt = new G4MaterialPropertiesTable();
+    WLS_mt->AddProperty("RINDEX",photonEnergy,refractiveIndexWLSfiber,nEntries);
+    WLS_mt->AddProperty("ABSLENGTH",photonEnergy,absWLSfiber,nEntries);
+    //WLS_mt->AddProperty("WLSABSLENGTH",photonEnergy,absWLSfiber,nEntries);
+    WLS_mt->AddProperty("WLSCOMPONENT",photonEnergy,emissionFib,nEntries);
+    WLS_mt->AddConstProperty("WLSTIMECONSTANT", 0.5*ns);
+
+    fNistManager->FindOrBuildMaterial("PMMA")->SetMaterialPropertiesTable(WLS_mt);
 
     //------------------------------------------------------------------------------
     //teflon properties
@@ -1113,6 +1167,17 @@ void A2ActiveHe3::SetOpticalProperties() {
     //Create optical surfaces
     //------------------------------------------------------------------------------
 
+    //WLS surface.  It should reflect, refract or absorb
+    if (fIsWLS) {
+        G4OpticalSurface* OptWLSSurface =
+                new G4OpticalSurface("OWLSSurface",  unified, ground, dielectric_dielectric);
+        OptWLSSurface->SetMaterialPropertiesTable(WLS_mt);
+
+        new G4LogicalSkinSurface("LSWLSSurface", fWLSLogic, OptWLSSurface);
+    }
+
+    //------------------------------------------------------------------------------------
+
     //teflon - only lambertian reflection, relatively OK simple approximation
     G4OpticalSurface* OptTeflonSurface =
             new G4OpticalSurface("OTeflonSurface",  unified, groundfrontpainted, dielectric_dielectric);
@@ -1196,6 +1261,14 @@ void A2ActiveHe3::DefineMaterials()
     Teflon->AddElement(fNistManager->FindOrBuildElement(6), 24*perCent);            //C
     Teflon->AddElement(fNistManager->FindOrBuildElement(9), 76*perCent);            //F
 
+    //--------------------------------------------------
+    // WLSfiber PMMA
+    //--------------------------------------------------
+
+    G4Material* PMMA = new G4Material("PMMA", density = 1.190*g/cm3, ncomponents = 3);
+    PMMA->AddElement(fNistManager->FindOrBuildElement(6), 5); //C
+    PMMA->AddElement(fNistManager->FindOrBuildElement(1), 8); //H
+    PMMA->AddElement(fNistManager->FindOrBuildElement(8), 2); //O
 
     //Gas mixture and He3 management----------------------------------------------------
 
@@ -1216,6 +1289,9 @@ void A2ActiveHe3::DefineMaterials()
     //Gas mixture and He3 end-----------------------------------------------------
     //----! IMPORTANT! Epoxy CURRENTLY TAKEN FROM A2 SIMULATION,------------------
     //NO IDEA WHETHER IT IS CORRECT OR NOT
+
+    G4Material* GasPure = new G4Material("ATGasPure", he3density, ncomponents = 1);
+    GasPure->AddElement(ATHe3, 100.*perCent);                                       //He3
 
     //Epoxy resin (C21H25Cl05) ***not certain if correct chemical formula or density
     //for colder temperature***:
