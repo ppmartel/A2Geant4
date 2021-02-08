@@ -3,6 +3,7 @@
 #include "G4UImanager.hh"
 #include "G4UIterminal.hh"
 #include "G4UItcsh.hh"
+#include "G4OpticalPhysics.hh"
 
 #define G4VIS_USE 1
 #define G4UI_USE 1
@@ -168,7 +169,17 @@ int main(int argc,char** argv) {
   runManager->SetUserInitialization(detector);
   //runManager->SetUserInitialization(new LHEP_BIC);
   // Use below insted if cannot install physics_list
-  runManager->SetUserInitialization(new A2PhysicsList);
+  //runManager->SetUserInitialization(new A2PhysicsList);
+
+  G4VModularPhysicsList* physicsList = new A2PhysicsList;
+  G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
+
+  physicsList->RegisterPhysics(opticalPhysics);
+  runManager->SetUserInitialization(physicsList);
+
+  // to set parameters in code, if wanted
+  //auto opticalParams = G4OpticalParameters::Instance();
+  //opticalParams->SetWLSTimeProfile("delta");
 
   G4UIsession* session = 0;
   G4UIExecutive* uiexecutive =0;
