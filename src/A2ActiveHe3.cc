@@ -1070,8 +1070,8 @@ void A2ActiveHe3::SetOpticalProperties() {
     // Add entries into properties table
     G4MaterialPropertiesTable* WLS_mt = new G4MaterialPropertiesTable();
     WLS_mt->AddProperty("RINDEX",photonEnergy,refractiveIndexWLSfiber,nEntries);
-    WLS_mt->AddProperty("ABSLENGTH",photonEnergy,absWLSfiber,nEntries);
-    //WLS_mt->AddProperty("WLSABSLENGTH",photonEnergy,absWLSfiber,nEntries);
+    //WLS_mt->AddProperty("ABSLENGTH",photonEnergy,absWLSfiber,nEntries);
+    WLS_mt->AddProperty("WLSABSLENGTH",photonEnergy,absWLSfiber,nEntries);
     WLS_mt->AddProperty("WLSCOMPONENT",photonEnergy,emissionFib,nEntries);
     WLS_mt->AddConstProperty("WLSTIMECONSTANT", 0.5*ns);
 
@@ -1170,7 +1170,7 @@ void A2ActiveHe3::SetOpticalProperties() {
     //WLS surface.  It should reflect, refract or absorb
     if (fIsWLS) {
         G4OpticalSurface* OptWLSSurface =
-                new G4OpticalSurface("OWLSSurface",  unified, ground, dielectric_dielectric);
+                new G4OpticalSurface("OWLSSurface",  unified, polished, dielectric_dielectric);
         OptWLSSurface->SetMaterialPropertiesTable(WLS_mt);
 
         new G4LogicalSkinSurface("LSWLSSurface", fWLSLogic, OptWLSSurface);
