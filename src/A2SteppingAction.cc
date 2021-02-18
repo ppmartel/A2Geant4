@@ -5,10 +5,16 @@
 #include "A2DetectorConstruction.hh"
 #include "A2EventAction.hh"
 
+#include "G4Cerenkov.hh"
+#include "G4Scintillation.hh"
+#include "G4OpBoundaryProcess.hh"
+
 #include "G4Track.hh"
 #include "G4Gamma.hh"
 #include "G4Proton.hh"
+#include "G4OpticalPhoton.hh"
 #include "G4SteppingManager.hh"
+#include "G4RunManager.hh"
 #include "CLHEP/Units/SystemOfUnits.h"
 
 using namespace CLHEP;
@@ -33,8 +39,51 @@ A2SteppingAction::~A2SteppingAction()
 
 void A2SteppingAction::UserSteppingAction(const G4Step* aStep)
 {
-  //  return;
   G4Track* track = aStep->GetTrack();
+  G4StepPoint* endPoint   = aStep->GetPostStepPoint();
+  G4StepPoint* startPoint = aStep->GetPreStepPoint();
+
+  G4String particleName = track->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
+
+  const G4VProcess* pds = endPoint->GetProcessDefinedStep();
+  G4cout << particleName << "\t" << pds->GetProcessName() << "\t" << startPoint->GetPhysicalVolume()->GetName();
+  //G4cout << "\t" << startPoint->GetPhysicalVolume()->GetLogicalVolume()->GetMaterial()->GetMaterialPropertiesTable()->GetConstProperty("SCINTILLATIONYIELD");
+  G4cout << "\t" << startPoint->GetPosition() << "\t" << endPoint->GetPosition() << G4endl;
+
+  if (particleName == "opticalphoton") {
+
+      // optical process has endpt on bdry,
+      if (endPoint->GetStepStatus() == fGeomBoundary) {
+
+          const G4DynamicParticle* theParticle = track->GetDynamicParticle();
+
+          G4ThreeVector oldMomentumDir = theParticle->GetMomentumDirection();
+
+          G4ThreeVector m0 = startPoint->GetMomentumDirection();
+          G4ThreeVector m1 = endPoint->GetMomentumDirection();
+
+          G4OpBoundaryProcessStatus theStatus = Undefined;
+
+          G4ProcessManager* OpManager =
+                  G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
+          G4int MAXofPostStepLoops =
+                  OpManager->GetPostStepProcessVector()->entries();
+          G4ProcessVector* postStepDoItVector =
+                  OpManager->GetPostStepProcessVector(typeDoIt);
+
+          for (G4int i=0; i<MAXofPostStepLoops; ++i) {
+              G4VProcess* currentProcess = (*postStepDoItVector)[i];
+
+              G4OpBoundaryProcess* opProc =
+                      dynamic_cast<G4OpBoundaryProcess*>(currentProcess);
+              if (opProc) {
+                  theStatus = opProc->GetStatus();
+                  G4cout << theStatus << G4endl;
+              }
+          }
+      }
+  }
+
 //   G4VPhysicalVolume* volume = track->GetVolume();
   
 //   // collect energy and track length step by step
