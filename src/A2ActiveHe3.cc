@@ -52,6 +52,8 @@ A2ActiveHe3::A2ActiveHe3() {
     fPMTPhysic = NULL;
     fEpoxyPhysic = NULL;
 
+    fSurface = NULL;
+
     fRegionAHe3 = new G4Region("AHe3");
     fAHe3SD = NULL;
     fAHe3VisSD = NULL;
@@ -390,7 +392,8 @@ void A2ActiveHe3::MakeWLS()
     G4double z0 = fHeContainerZ/2 - fLatClr;
     G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
     G4double d1 = d0 - fWLSthick*tan(th/2);
-    G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
+    //G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
+    G4Tubs* wls = new G4Tubs("WLS-bar",0,5.0*mm,z0,0,360.0*deg);
     //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
     fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
     G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
@@ -925,7 +928,7 @@ void A2ActiveHe3::PlaceParts() {
                            43,fIsOverlapVol);    //copy number
     }
     //place the outside helium inside vessel
-    new G4PVPlacement (0,  //no rotation
+    G4VPhysicalVolume* fHe_Phy = new G4PVPlacement (0,  //no rotation
                        G4ThreeVector(0, 0, 0),
                        fHeOutsideTeflonLogic,            //he gas logic
                        "PHeOutsideTeflon",          //name
@@ -942,19 +945,23 @@ void A2ActiveHe3::PlaceParts() {
     for(G4int iw=0; iw<fNwls; iw++){
         G4RotationMatrix* pp = new G4RotationMatrix();
         G4double th1 = iw*th;
-        pp->rotateY(90*deg);            // align parallel beam axis
-        pp->rotateX(th1);               // align for side of polygon
+        //pp->rotateY(90*deg);            // align parallel beam axis
+        //pp->rotateX(th1);               // align for side of polygon
         G4double xw = fRwls1*cos(th2);  // coordinates for polygon side
         G4double yw = fRwls1*sin(th2);
         char nw[16];
         sprintf(nw,"PWLS_%d",iw);
-        new G4PVPlacement (pp,
+        G4VPhysicalVolume* fWLS_Phy = new G4PVPlacement (pp,
                            G4ThreeVector(xw, yw, 0),
                            fWLSLogic,
                            nw,
                            fHeOutsideTeflonLogic,//mother logic (He)
                            false,                //pMany = false
                            iw,fIsOverlapVol);    //copy number
+
+        sprintf(nw,"SWLS_%d",iw);
+        //new G4LogicalBorderSurface(nw, fWLS_Phy, fHe_Phy, fSurface);
+
         th2 -= th;
     }
 
@@ -1169,11 +1176,12 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     //WLS surface.  It should reflect, refract or absorb
     if (fIsWLS) {
-        G4OpticalSurface* OptWLSSurface =
-                new G4OpticalSurface("OWLSSurface",  unified, polished, dielectric_dielectric);
-        OptWLSSurface->SetMaterialPropertiesTable(WLS_mt);
+        //G4OpticalSurface* OptWLSSurface =
+        fSurface = new G4OpticalSurface("OWLSSurface",  unified, polished, dielectric_dielectric);
+        fSurface->SetMaterialPropertiesTable(WLS_mt);
+        //OptWLSSurface->SetMaterialPropertiesTable(WLS_mt);
 
-        new G4LogicalSkinSurface("LSWLSSurface", fWLSLogic, OptWLSSurface);
+        //new G4LogicalSkinSurface("LSWLSSurface", fWLSLogic, OptWLSSurface);
     }
 
     //------------------------------------------------------------------------------------

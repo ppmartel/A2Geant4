@@ -12,6 +12,7 @@
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
 #include "G4MaterialPropertiesTable.hh"
+#include "G4OpticalSurface.hh"
 #include "G4NistManager.hh"
 #include "G4Region.hh"
 #include "A2SD.hh"
@@ -99,6 +100,8 @@ private:
 
   G4VPhysicalVolume **fPMTPhysic;   //physical volumes to set LogicalBorderSurface
   G4VPhysicalVolume **fEpoxyPhysic;
+
+  G4OpticalSurface* fSurface;
   //------------------------------------------------------------------------
   //geometric parameters
   //------------------------------------------------------------------------
