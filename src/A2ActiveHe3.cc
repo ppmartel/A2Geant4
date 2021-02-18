@@ -287,7 +287,7 @@ void A2ActiveHe3::MakeVessel() {
 
     G4VisAttributes* lblue  = new G4VisAttributes( G4Colour(0.0,0.0,0.75) );
     G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
-    G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0)  );
+    G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0,0.5)  );
 
     fVesselLogic->SetVisAttributes(G4VisAttributes::Invisible);
     //LMainCell->SetVisAttributes(grey);
