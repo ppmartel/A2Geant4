@@ -42,6 +42,7 @@
 #include "A2TrackingAction.hh"
 
 //#include "LHEP_BIC.hh"
+#include "QGSP_BERT.hh"
 #include "QGSP_BERT_HP.hh"
 
 #include <getopt.h>
@@ -172,9 +173,10 @@ int main(int argc,char** argv) {
   // Use below insted if cannot install physics_list
   //runManager->SetUserInitialization(new A2PhysicsList);
 
-  G4VModularPhysicsList* physicsList = new QGSP_BERT_HP;
-  G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
+  G4VModularPhysicsList* physicsList = new QGSP_BERT;
+  //G4VModularPhysicsList* physicsList = new QGSP_BERT_HP;
 
+  G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
   physicsList->RegisterPhysics(opticalPhysics);
   runManager->SetUserInitialization(physicsList);
 
