@@ -16,14 +16,16 @@ AT-Dim: 420.0 51.0 1.5 150.0 50.0 10.0 0.5
 ## plate thickness
 ## radial clearance to main vessel side
 ## lateral clearance to main vessel ends
-AT-WLS: 8 3.0 2.0 5.0
+#AT-WLS: 8 3.0 2.0 5.0
+AT-WLS: 40 6.0 0.0 5.0
 ##
 ## Scintillation Yield (# photons/MeV)
-AT-Scint: 100
+AT-Scint: 65
 ##
 ## Run Mode 0=no, 1=yes
 ## Check overlaps
-## Use WLS
+## Use WLS (1: plate barrel, 2: fiber barrel, 3: fiber helix)
 ## Run optical photon tracking
+## Use TPB (instead of nitrogen for shifter)
 ## Section main cell along length
-Run-Mode: 0 1 1 0
+Run-Mode: 0 2 1 1 0
