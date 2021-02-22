@@ -60,14 +60,14 @@
 # The second file will contain the detector plus one event.
 # The third file will contain the detector plus ten events.
 #/vis/open OGLI
-/vis/open OGL
+/vis/open OGL 800x600-0+0
 #/vis/open OGLIX
 #/vis/open DAWNFILE
 #/vis/scene/create 
 #/vis/viewer/reset
-/vis/viewer/zoom 3.
+/vis/viewer/zoom 2.
 #/vis/viewer/set/viewpointThetaPhi 130. 40.
-/vis/viewer/set/viewpointThetaPhi 170. 30.
+/vis/viewer/set/viewpointThetaPhi 140. 30.
 /vis/viewer/set/style surface
 #/vis/drawVolume
 #/vis/scene/endOfEventAction accumulate	
@@ -76,15 +76,15 @@
 #/vis/geometry/set/forceAuxEdgeVisible World -1 true
 /vis/viewer/set/autoRefresh true
 /vis/verbose warnings
-/vis/scene/add/axes 0 0 0 3.00 cm
+#/vis/scene/add/axes 0 0 0 5.00 cm
 
 #/gun/particle alpha
-#/gun/energy 10 MeV
-#/gun/direction 0 -1. 0
+#/gun/energy 1 MeV
+#/gun/direction 0 0 1
 #/gun/position 0 0 0
 
 /gun/particle opticalphoton
 /gun/energy 3.0 eV
-/gun/position -4 0 0
-/gun/direction 0.1 0 0.7
+/gun/position 4.0 0 0
+/gun/direction 0.25 0 0.5
 /gun/polarization 0 1 0
