@@ -17,7 +17,7 @@ const G4int MAXSIZE_TAPS= 512;
 const G4int MAXSIZE_PID= 24;
 const G4int MAXSIZE_MWPC = 400;
 const G4int MAXSIZE_PIZZA = 24;
-const G4int MAXSIZE_HE3 = 72;
+const G4int MAXSIZE_HE3 = 200;
 
 class A2CBOutput 
 {
