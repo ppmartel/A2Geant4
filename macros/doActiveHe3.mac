@@ -1,0 +1,38 @@
+#####Pre-Initialisation
+#Choose a physics list, for a full listing type /A2/physics/ListPhysics
+#/A2/physics/Physics QGSP_BERT
+#/A2/physics/CutsAll 1 mm
+
+####Initialise
+/run/initialize
+
+/A2/generator/Mode 1
+/A2/generator/SetTMax 10 MeV
+/A2/generator/SetTMin 10 MeV
+/A2/generator/SetThetaMin 0.0 deg
+/A2/generator/SetThetaMax 180.0 deg
+/A2/generator/SetPhiMin 0.0 deg
+/A2/generator/SetPhiMax 180.0 deg
+/A2/generator/SetBeamXSigma 3 mm
+/A2/generator/SetBeamYSigma 3 mm
+/A2/generator/SetTargetZ0 0 mm
+/A2/generator/SetTargetThick 40 cm
+/A2/generator/SetTargetRadius 5 cm
+
+#####Output
+#Open the output file for writing
+/A2/event/setOutputFile ActiveHe3_10MeV.root
+/A2/event/storePrimaries false
+
+#/gun/particle opticalphoton
+#/gun/polarization 0 1 0
+
+#/gun/particle gamma
+#/gun/particle e-
+#/gun/particle e+
+#/gun/particle pi+
+#/gun/particle proton
+#/gun/particle neutron
+/gun/particle alpha
+
+/run/beamOn 100
