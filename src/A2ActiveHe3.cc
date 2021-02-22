@@ -37,6 +37,7 @@ A2ActiveHe3::A2ActiveHe3() {
     fMyPhysi = NULL;
 
     fVesselLogic = NULL;
+    fHeLogic = NULL;
     fHeOutsideTeflonLogic = NULL;
     fPCBLogic = NULL;
     fTeflonLogic = NULL;
@@ -68,6 +69,7 @@ A2ActiveHe3::A2ActiveHe3() {
 
     fIsOverlapVol = true;
     fIsWLS = 1;
+    fIsTPB = 1;
     fNwls = 8;                       // phi segmentation
     fWLSthick = 3*mm;                // thickness WLS plate
     fRadClr = 2*mm;                  // radial clearance to vessel
@@ -99,13 +101,13 @@ G4VPhysicalVolume* A2ActiveHe3::Construct(G4LogicalVolume* MotherLogical, G4doub
     //call functions that build parts of the detector
     MakeVessel();                    //builds and places parts inside fVesselLogic
 
-    if(fIsWLS){
-        MakeWLS();                       //builds wavelength shifting plates
-    }
-    else{
+    if(fIsWLS == 1) MakeWLSPlates();     //builds wavelength shifting barrel with plates
+    else if(fIsWLS == 2) MakeWLSFibers();//builds wavelength shifting barrel with fibers
+    else if(fIsWLS == 3) MakeWLSHelix(); //builds wavelength shifting helix (TBD)
+    else{                                //builds version with nitrogen WLS
         MakePCB();                       //builds and places parts inside fPCBLogic
         MakeTeflonLayer();               //builds and places parts inside fTeflonLayer
-        MakeSiPMTs();                    //places pmt's inside fTeflonLayer
+        //MakeSiPMTs();                    //places pmt's inside fTeflonLayer
         //
         if (fMakeMylarSections) {
             G4cout << "A2ActiveHe3::Construct() Sectioning the target." << G4endl;
@@ -114,9 +116,11 @@ G4VPhysicalVolume* A2ActiveHe3::Construct(G4LogicalVolume* MotherLogical, G4doub
         else { G4cout << "A2ActiveHe3::Construct() Target not sectioned." << G4endl; }
     }
     //
+    MakeSiPMTs();
     if (fOpticalSimulation) {
         G4cout << "A2ActiveHe3::Construct() Setting optical properties." << G4endl;
-        SetOpticalProperties(); //set optical properties and surfaces
+        if(fIsTPB) SetOpticalPropertiesTPB(); //set optical properties and surfaces
+        else SetOpticalPropertiesHeN(); //set optical properties and surfaces
     }
     else { G4cout << "A2ActiveHe3::Construct() Optical properties not used." << G4endl; }
     //
@@ -225,8 +229,8 @@ void A2ActiveHe3::MakeVessel() {
              0,  //no rotation
              G4ThreeVector(0, 0, -(fHeContainerZ+fExtensionZU+fContainerThickness)/2) ); //move extension cell
 
-    G4UnionSolid* HeOutsideTeflon = new G4UnionSolid
-            ("HeOutsideTeflon",
+    G4UnionSolid* HeCell = new G4UnionSolid
+            ("HeCell",
              HeUnion1,
              HeExtCellD,
              0,  //no rotation
@@ -268,27 +272,12 @@ void A2ActiveHe3::MakeVessel() {
             (BerylliumWindow,   //solid
              fNistManager->FindOrBuildMaterial("G4_Be"), //material
              "LogicBerylliumWindow");
-
-    if(fIsWLS)
-    {
-        fHeOutsideTeflonLogic = new G4LogicalVolume
-                (HeOutsideTeflon,
-                 fNistManager->FindOrBuildMaterial("ATGasPure"),
-                 "LogicHeOutsideTeflon");
-    }
-    else
-    {
-        fHeOutsideTeflonLogic = new G4LogicalVolume
-                (HeOutsideTeflon,
-                 fNistManager->FindOrBuildMaterial("ATGasMix"),
-                 "LogicHeOutsideTeflon");
-    }
     //------------------------------------------------------------------------------
     //Set visual attributes
     //------------------------------------------------------------------------------
 
-    G4VisAttributes* lblue  = new G4VisAttributes( G4Colour(0.0,0.0,0.75) );
-    G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
+    //G4VisAttributes* lblue  = new G4VisAttributes( G4Colour(0.0,0.0,0.75) );
+    //G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
     G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0,0.5)  );
 
     fVesselLogic->SetVisAttributes(G4VisAttributes::Invisible);
@@ -302,8 +291,27 @@ void A2ActiveHe3::MakeVessel() {
     LMainCellEnd->SetVisAttributes(G4VisAttributes::Invisible);
     //LBerylliumWindow->SetVisAttributes(lblue);
     LBerylliumWindow->SetVisAttributes(G4VisAttributes::Invisible);
-    fHeOutsideTeflonLogic->SetVisAttributes(cyan);
-    //fHeOutsideTeflonLogic->SetVisAttributes(G4VisAttributes::Invisible);
+
+    //------------------------------------------------------------------------------
+    //Here we use the same volumes for the nitrogen shifted and plate/fiber shifted
+    //versions, hence why it's still called fHeOutsideTeflonLogic
+    //------------------------------------------------------------------------------
+    if(fIsWLS)
+    {
+        fHeLogic = new G4LogicalVolume
+                (HeCell,
+                 fNistManager->FindOrBuildMaterial("ATGasPure"),
+                 "LogicHe");
+        fHeLogic->SetVisAttributes(cyan);
+    }
+    else
+    {
+        fHeOutsideTeflonLogic = new G4LogicalVolume
+                (HeCell,
+                 fNistManager->FindOrBuildMaterial("ATGasMix"),
+                 "LogicHeOutsideTeflon");
+        fHeOutsideTeflonLogic->SetVisAttributes(cyan);
+    }
 
     //------------------------------------------------------------------------------
     //Create placements of the logical volumes
@@ -384,7 +392,8 @@ void A2ActiveHe3::MakeVessel() {
 // WLS plates are positioned in PlaceParts()
 // JRMA 29/06/2020
 //-----------------------------------------------------------------------------------
-void A2ActiveHe3::MakeWLS()
+
+void A2ActiveHe3::MakeWLSPlates()
 {
     G4double th = 360.0*deg/fNwls;
     G4double r0 = fHeContainerR - fRadClr;
@@ -392,8 +401,42 @@ void A2ActiveHe3::MakeWLS()
     G4double z0 = fHeContainerZ/2 - fLatClr;
     G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
     G4double d1 = d0 - fWLSthick*tan(th/2);
-    //G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
-    G4Tubs* wls = new G4Tubs("WLS-bar",0,5.0*mm,z0,0,360.0*deg);
+    G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
+    //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
+    fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
+    G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
+    fWLSLogic->SetVisAttributes(blue);
+}
+
+//-----------------------------------------------------------------------------------
+// Taking the original barrel design, but replacing the plates with square fibers
+//-----------------------------------------------------------------------------------
+
+void A2ActiveHe3::MakeWLSFibers()
+{
+    G4double th = 360.0*deg/fNwls;
+    fRwls1 = 0.5*fWLSthick/tan(th/2) + 0.5*fWLSthick + 0.001*mm; // slightly larger so fibers dont touch
+    G4double z0 = fHeContainerZ/2 - fLatClr;
+    G4Box* wls = new G4Box("WLS-fiber",0.5*fWLSthick,0.5*fWLSthick,z0);
+    //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
+    fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
+    G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
+    fWLSLogic->SetVisAttributes(blue);
+}
+
+//-----------------------------------------------------------------------------------
+// Placeholder for helix design, currently just same as the original barrel design
+//-----------------------------------------------------------------------------------
+
+void A2ActiveHe3::MakeWLSHelix()
+{
+    G4double th = 360.0*deg/fNwls;
+    G4double r0 = fHeContainerR - fRadClr;
+    fRwls1 = r0*cos(th/2) - 0.5*fWLSthick;
+    G4double z0 = fHeContainerZ/2 - fLatClr;
+    G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
+    G4double d1 = d0 - fWLSthick*tan(th/2);
+    G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
     //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
     fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
     G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
@@ -699,6 +742,44 @@ void A2ActiveHe3::MakeTeflonLayer() {
 } //end of MakeTeflonLayer()
 
 
+/**********************************************************
+
+This function builds the SiPMTs and the Epoxy between them
+and the WLS
+
+**********************************************************/
+void A2ActiveHe3::MakeSiPMTs() {
+
+    //--------------------------------------------------
+    // Epoxy layer in front of SiPMT
+    //--------------------------------------------------
+
+    G4Box* Epoxy= new G4Box("Epoxy", 3.*mm, 3.*mm, 0.05*mm);
+
+    fEpoxyLogic = new G4LogicalVolume(Epoxy,
+                                      fNistManager->FindMaterial("ATEpoxy"),
+                                      "LogicEpoxy");
+
+    //--------------------------------------------------
+    // Individual SiPMT
+    //--------------------------------------------------
+
+    G4Box* SiPMT= new G4Box("SiPMT", 3.*mm, 3.*mm, 0.05*mm);
+
+    fPMTLogic = new G4LogicalVolume(SiPMT,
+                                    fNistManager->FindMaterial("ATSiPMT"),
+                                    "LogicSiPMT");
+
+    //------------------------------------------------------------------------------
+    //Set visual attributes
+    //------------------------------------------------------------------------------
+
+    G4VisAttributes* lblue  = new G4VisAttributes( G4Colour(0.0,0.0,0.75) );
+    G4VisAttributes* black   = new G4VisAttributes( G4Colour(1,1,1) );
+
+    fEpoxyLogic->SetVisAttributes(lblue);
+    fPMTLogic->SetVisAttributes(black);
+}
 
 
 /**********************************************************
@@ -899,24 +980,107 @@ void A2ActiveHe3::PlaceParts() {
     //------------------------------------------------------------------------------
     //Place parts of the detector
     //------------------------------------------------------------------------------
-    if(!fIsWLS){
+    if(fIsWLS) {
+        //place the outside helium inside vessel
+        G4VPhysicalVolume* HePhysi = new G4PVPlacement (0,                    //no rotation
+                                                        G4ThreeVector(0,0,0), //center
+                                                        fHeLogic,             //he gas logic
+                                                        "PhysiHe",            //name
+                                                        fVesselLogic,         //mother logic (vessel)
+                                                        false,                //pMany = false, true is not implemented
+                                                        42,fIsOverlapVol);    //copy number
+        //
+        // place WLS plates or fibers in He gas volume
+        // loop round phi segments (sides of polygon/fiber)
+        //
+        G4double th = 360*deg/fNwls;
+        G4double th2 = 0.0;
+        for(G4int iw=0; iw<fNwls; iw++){
+            G4RotationMatrix* pp = new G4RotationMatrix();
+            G4double th1 = iw*th;
+            if(fIsWLS == 1) {
+                pp->rotateY(90*deg);               // align parallel beam axis
+                pp->rotateX(th1);                  // align for side of polygon
+            }
+            else if(fIsWLS == 2) pp->rotateZ(th1); // align for side of fiber
+            G4double xw = fRwls1*cos(th2);         // coordinates for polygon side/fiber center
+            G4double yw = fRwls1*sin(th2);
+            char nw[16];
+            sprintf(nw,"PWLS_%d",iw);
+            G4VPhysicalVolume* WLSPhysi = new G4PVPlacement (pp,
+                                                             G4ThreeVector(xw, yw, 0),
+                                                             fWLSLogic,
+                                                             nw,
+                                                             fHeLogic,             //mother logic (He)
+                                                             false,                //pMany = false
+                                                             iw+400,fIsOverlapVol);    //copy number
+
+            sprintf(nw,"SWLS_%d",iw);
+            //new G4LogicalBorderSurface(nw, WLSPhysi, HePhysi, fSurface);
+
+            G4double z0 = fHeContainerZ/2 - fLatClr;
+
+            sprintf(nw,"PEpoxyU_%d",iw);
+            //fEpoxyPhysic[2*iw] =
+            new G4PVPlacement (pp,
+                               G4ThreeVector(xw, yw, -z0 - 0.05*mm),
+                               fEpoxyLogic,
+                               nw,
+                               fHeLogic,             //mother logic (He)
+                               false,                //pMany = false
+                               2*iw+200,fIsOverlapVol);    //copy number
+
+            sprintf(nw,"PPMTU_%d",iw);
+            //fPMTPhysic[2*iw] =
+            new G4PVPlacement (pp,
+                               G4ThreeVector(xw, yw, -z0 - 0.15*mm),
+                               fPMTLogic,
+                               nw,
+                               fHeLogic,             //mother logic (He)
+                               false,                //pMany = false
+                               2*iw,fIsOverlapVol);    //copy number
+
+            sprintf(nw,"PEpoxyD_%d",iw);
+            //fEpoxyPhysic[2*iw+1] =
+            new G4PVPlacement (pp,
+                               G4ThreeVector(xw, yw, z0 + 0.05*mm),
+                               fEpoxyLogic,
+                               nw,
+                               fHeLogic,             //mother logic (He)
+                               false,                //pMany = false
+                               2*iw+201,fIsOverlapVol);    //copy number
+
+            sprintf(nw,"PPMTD_%d",iw);
+            //fPMTPhysic[2*iw+1] =
+            new G4PVPlacement (pp,
+                               G4ThreeVector(xw, yw, z0 + 0.15*mm),
+                               fPMTLogic,
+                               nw,
+                               fHeLogic,             //mother logic (He)
+                               false,                //pMany = false
+                               2*iw+1,fIsOverlapVol);    //copy number
+
+            th2 -= th;
+        }
+    }
+    else {
         //place the helium inside teflon cylinder
-        new G4PVPlacement (0,  //no rotation
+        new G4PVPlacement (0,                    //no rotation
                            G4ThreeVector(0,0,0), //teflon cylinder in the centre
-                           fHeInsideTeflonLogic,     //helium logic
-                           "PHeInsideTeflon",        //name
-                           fTeflonLogic,            //mother logic (teflonLogic)
+                           fHeInsideTeflonLogic, //helium logic
+                           "PHeInsideTeflon",    //name
+                           fTeflonLogic,         //mother logic (teflonLogic)
                            false,                //pMany = false, true is not implemented
-                           45,fIsOverlapVol);                  //copy number
+                           45,fIsOverlapVol);    //copy number
 
         //place the teflon layer insice pcb
         new G4PVPlacement (0,                    //no rotation
                            G4ThreeVector(0,0,0), //center
                            fTeflonLogic,         //main cell logic
                            "PTeflonLogic",       //name
-                           fPCBLogic,             //mother logic
+                           fPCBLogic,            //mother logic
                            false,                //pMany = false, true is not implemented
-                           44,fIsOverlapVol);                  //copy number
+                           44,fIsOverlapVol);    //copy number
 
         //place the pcb inside the outside helium
         new G4PVPlacement (0,                    //no rotation
@@ -926,43 +1090,14 @@ void A2ActiveHe3::PlaceParts() {
                            fHeOutsideTeflonLogic,//mother logic
                            false,                //pMany = false, true is not implemented
                            43,fIsOverlapVol);    //copy number
-    }
-    //place the outside helium inside vessel
-    G4VPhysicalVolume* fHe_Phy = new G4PVPlacement (0,  //no rotation
-                       G4ThreeVector(0, 0, 0),
-                       fHeOutsideTeflonLogic,            //he gas logic
-                       "PHeOutsideTeflon",          //name
-                       fVesselLogic,         //mother logic (vessel)
-                       false,                //pMany = false, true is not implemented
-                       42,fIsOverlapVol);                  //copy number
-    //
-    // place WLS plates in He gas volume
-    // loop round phi segments (sides of polygon)
-    // NB copy numbers provisionally set 140 onwards...this may have to change
-    //
-    G4double th = 360*deg/fNwls;
-    G4double th2 = 0.0;
-    for(G4int iw=0; iw<fNwls; iw++){
-        G4RotationMatrix* pp = new G4RotationMatrix();
-        G4double th1 = iw*th;
-        //pp->rotateY(90*deg);            // align parallel beam axis
-        //pp->rotateX(th1);               // align for side of polygon
-        G4double xw = fRwls1*cos(th2);  // coordinates for polygon side
-        G4double yw = fRwls1*sin(th2);
-        char nw[16];
-        sprintf(nw,"PWLS_%d",iw);
-        G4VPhysicalVolume* fWLS_Phy = new G4PVPlacement (pp,
-                           G4ThreeVector(xw, yw, 0),
-                           fWLSLogic,
-                           nw,
-                           fHeOutsideTeflonLogic,//mother logic (He)
-                           false,                //pMany = false
-                           iw,fIsOverlapVol);    //copy number
-
-        sprintf(nw,"SWLS_%d",iw);
-        //new G4LogicalBorderSurface(nw, fWLS_Phy, fHe_Phy, fSurface);
-
-        th2 -= th;
+        //place the outside helium inside vessel
+        new G4PVPlacement (0,                    //no rotation
+                           G4ThreeVector(0,0,0), //center
+                           fHeOutsideTeflonLogic,//he gas logic
+                           "PHeOutsideTeflon",   //name
+                           fVesselLogic,         //mother logic (vessel)
+                           false,                //pMany = false, true is not implemented
+                           42,fIsOverlapVol);    //copy number
     }
 
     //place the vessel inside MyLogic
@@ -983,37 +1118,211 @@ This function sets the optical properties
 for some materials and surfaces
 
 **********************************************************/
-void A2ActiveHe3::SetOpticalProperties() {
+void A2ActiveHe3::SetOpticalPropertiesTPB() {
+
+    //Photon energies 1.94 - 20.7 eV --> 640 - 60 nm, even step of 20 nm
+    G4double photonEnergy[] =
+    {1.94*eV, 2.00*eV, 2.07*eV, 2.14*eV, 2.21*eV, 2.30*eV, 2.38*eV, 2.48*eV, 2.58*eV, 2.70*eV,
+     2.82*eV, 2.95*eV, 3.10*eV, 3.26*eV, 3.44*eV, 3.65*eV, 3.87*eV, 4.13*eV, 4.43*eV, 4.77*eV,
+     5.17*eV, 5.64*eV, 6.20*eV, 6.89*eV, 7.75*eV, 8.86*eV, 10.3*eV, 12.4*eV, 15.5*eV, 20.7*eV};
+
+    const G4int nEntries = sizeof(photonEnergy)/sizeof(G4double);
+
+    //------------------------------------------------------------------------------
+    //helium
+    //------------------------------------------------------------------------------
+    //this gives a peak at 80 nm --> 15.5 eV
+    G4double He_SCINT[] =
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 1.0, 0.1};
+
+    assert(sizeof(He_SCINT) == sizeof(photonEnergy));
+
+    G4double He_RIND[] =
+    {1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003,
+     1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003,
+     1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003};
+
+    assert(sizeof(He_RIND) == sizeof(photonEnergy));
+
+    //absorption length
+    G4double He_ABSL[] =
+    {3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m,  3.5*m,  3.5*m,
+     3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m,  3.5*m,  3.5*m,
+     3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m, 3.5*m,  3.5*m,  3.5*m};
+
+    assert(sizeof(He_ABSL) == sizeof(photonEnergy));
+
+    G4MaterialPropertiesTable* He_mt = new G4MaterialPropertiesTable();
+    He_mt->AddProperty("FASTCOMPONENT", photonEnergy, He_SCINT, nEntries);
+    He_mt->AddProperty("SLOWCOMPONENT", photonEnergy, He_SCINT, nEntries);
+    He_mt->AddProperty("RINDEX",        photonEnergy, He_RIND,  nEntries);
+    He_mt->AddProperty("ABSLENGTH",     photonEnergy, He_ABSL,  nEntries);
+
+    He_mt->AddConstProperty("SCINTILLATIONYIELD", fScintYield/MeV   );
+    He_mt->AddConstProperty("RESOLUTIONSCALE" ,   1.0        );
+    He_mt->AddConstProperty("FASTTIMECONSTANT",   30.*ns     );
+    He_mt->AddConstProperty("SLOWTIMECONSTANT",   60.*ns     );
+    He_mt->AddConstProperty("YIELDRATIO",         1.0        );
+    //----------------------------------------------------
+
+    //add these properties to GasMix
+    fNistManager->FindOrBuildMaterial("ATGasPure")->SetMaterialPropertiesTable(He_mt);
+
+    G4double WLS_RIND[] =
+    {1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+     1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+     1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60};
+
+    assert(sizeof(WLS_RIND) == sizeof(photonEnergy));
+
+    G4double WLS_ABSL[] =
+    {5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m,
+     5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm,
+     1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm};
+
+    assert(sizeof(WLS_ABSL) == sizeof(photonEnergy));
+
+    G4double WLS_SCINT[] =
+    {0.00, 0.00, 0.00, 0.01, 0.01, 0.02, 0.05, 0.10, 0.21, 0.42,
+     0.73, 0.97, 0.44, 0.01, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
+     0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
+
+    assert(sizeof(WLS_SCINT) == sizeof(photonEnergy));
+
+    // Add entries into properties table
+    G4MaterialPropertiesTable* WLS_mt = new G4MaterialPropertiesTable();
+    WLS_mt->AddProperty("RINDEX", photonEnergy, WLS_RIND, nEntries);
+    WLS_mt->AddProperty("WLSABSLENGTH", photonEnergy, WLS_ABSL, nEntries);
+    WLS_mt->AddProperty("WLSCOMPONENT", photonEnergy, WLS_SCINT, nEntries);
+    WLS_mt->AddConstProperty("WLSTIMECONSTANT", 0.5*ns);
+
+    fNistManager->FindOrBuildMaterial("PMMA")->SetMaterialPropertiesTable(WLS_mt);
+
+    //------------------------------------------------------------------------------
+    //Epoxy (best guesses I could do)
+    //------------------------------------------------------------------------------
+
+    //the film refractive index at 589 nm from Martin Sharratt's e-mail
+    //no dependency known
+    G4double Epoxy_RIND[nEntries] =
+    {1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54,
+     1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54,
+     1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54};
+
+    //use 1, the pmt acceptance spectrum already includes the epoxy effect according
+    //to e-mail from Sharratt
+    G4double Epoxy_Transmittance[nEntries] =
+    {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+
+    G4MaterialPropertiesTable *Epoxy_mt = new G4MaterialPropertiesTable();
+    Epoxy_mt->AddProperty("RINDEX", photonEnergy, Epoxy_RIND, nEntries);
+    Epoxy_mt->AddProperty("TRANSMITTANCE", photonEnergy, Epoxy_Transmittance, nEntries);
+
+    fNistManager->FindOrBuildMaterial("ATEpoxy")->SetMaterialPropertiesTable(Epoxy_mt);
+
+    //------------------------------------------------------------------------------
+    //Silicon photomultipliers (currently set so that every hit is detected!)
+    //------------------------------------------------------------------------------
+
+    G4double SiPMT_RIND[nEntries] =
+    {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+
+    // detect every photon that hits the pmt. This can be used to correlate which
+    // wavelengths are detected more efficiently
+    G4double SiPMT_EFF[nEntries] =
+    {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+
+    // Photocathod reflectivity, currently 0, so detect all
+    G4double SiPMT_REFL[nEntries]   =
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+    G4MaterialPropertiesTable *SiPMT_mt = new G4MaterialPropertiesTable();
+    SiPMT_mt->AddProperty("RINDEX", photonEnergy, SiPMT_RIND, nEntries);
+    SiPMT_mt->AddProperty("EFFICIENCY", photonEnergy, SiPMT_EFF, nEntries);
+    SiPMT_mt->AddProperty("REFLECTIVITY", photonEnergy, SiPMT_REFL, nEntries);
+
+    fNistManager->FindOrBuildMaterial("ATSiPMT")->SetMaterialPropertiesTable(SiPMT_mt);
+
+    //------------------------------------------------------------------------------
+    //Create optical surfaces
+    //------------------------------------------------------------------------------
+
+    //WLS surface.  It should reflect, refract or absorb
+    if (fIsWLS) {
+        //G4OpticalSurface* OptWLSSurface =
+        fSurface = new G4OpticalSurface("OWLSSurface",  unified, polished, dielectric_dielectric);
+        fSurface->SetMaterialPropertiesTable(WLS_mt);
+        //OptWLSSurface->SetMaterialPropertiesTable(WLS_mt);
+
+        //new G4LogicalSkinSurface("LSWLSSurface", fWLSLogic, OptWLSSurface);
+    }
+
+    //------------------------------------------------------------------------------------
+
+    //epoxy surface.  It should reflect, refract or absorb
+    if (fMakeEpoxy) {
+        G4OpticalSurface* OptEpoxySurface =
+                new G4OpticalSurface("OEpoxySurface",  unified, ground, dielectric_dielectric);
+        //janecek, moses 2010; ground sigmaalpha 12 deg = 0.21rad
+        OptEpoxySurface->SetSigmaAlpha(0.21);
+        OptEpoxySurface->SetMaterialPropertiesTable(Epoxy_mt);
+
+        new G4LogicalSkinSurface("LSEpoxySurface", fEpoxyLogic, OptEpoxySurface);
+    }
+
+    //------------------------------------------------------------------------------------
+
+    //pmt surface. The specified model uses ONLY reflection or absorption
+    G4OpticalSurface* OptPmtSurface =
+            new G4OpticalSurface("OPmtSurface",  unified, polishedfrontpainted, dielectric_dielectric);
+            //new G4OpticalSurface("OPmtSurface",  unified, ground, dielectric_metal);
+    OptPmtSurface->SetMaterialPropertiesTable(SiPMT_mt);
+
+    new G4LogicalSkinSurface("LSPmtSurfarce", fPMTLogic, OptPmtSurface);
+
+} //end SetOpticalPropertiesTPB()
+
+void A2ActiveHe3::SetOpticalPropertiesHeN() {
 
     //------------------------------------------------------------------------------
     //gas mixture
     //------------------------------------------------------------------------------
-    const G4int nentries = 18;
+    const G4int nEntries = 18;
 
     //Photon energies 1.88 - 3.87 eV --> 660 - 320 nm, even step of 20 nm
-    G4double HeN_Energy[nentries] = {1.88*eV, 1.94*eV, 2.0*eV, 2.07*eV, 2.14*eV, 2.21*eV, 2.3*eV,
+    G4double HeN_Energy[nEntries] = {1.88*eV, 1.94*eV, 2.0*eV, 2.07*eV, 2.14*eV, 2.21*eV, 2.3*eV,
                                      2.38*eV, 2.48*eV, 2.58*eV, 2.7*eV, 2.82*eV, 2.95*eV, 3.1*eV,
                                      3.26*eV, 3.44*eV, 3.65*eV, 3.87*eV};
 
     //this gives a peak from 400 to 440 nm --> 3.1 to 2.95 eV
-    G4double HeN_SCINT[nentries] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    G4double HeN_SCINT[nEntries] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
                                     0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 0.1};
 
     //See ref in Seian's paper; no need for higher accuracy in my opinion
-    G4double HeN_RIND[nentries] =
+    G4double HeN_RIND[nEntries] =
     {1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003,
      1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003, 1.00003};
 
     //absorption length
-    G4double HeN_ABSL[nentries] =
+    G4double HeN_ABSL[nEntries] =
     {3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm, 3500.*cm,
      3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm,3500.*cm, 3500.*cm};
 
     G4MaterialPropertiesTable* HeN_mt = new G4MaterialPropertiesTable();
-    HeN_mt->AddProperty("FASTCOMPONENT", HeN_Energy, HeN_SCINT, nentries);
-    HeN_mt->AddProperty("SLOWCOMPONENT", HeN_Energy, HeN_SCINT, nentries);
-    HeN_mt->AddProperty("RINDEX",        HeN_Energy, HeN_RIND,  nentries);
-    HeN_mt->AddProperty("ABSLENGTH",     HeN_Energy, HeN_ABSL,  nentries);
+    HeN_mt->AddProperty("FASTCOMPONENT", HeN_Energy, HeN_SCINT, nEntries);
+    HeN_mt->AddProperty("SLOWCOMPONENT", HeN_Energy, HeN_SCINT, nEntries);
+    HeN_mt->AddProperty("RINDEX",        HeN_Energy, HeN_RIND,  nEntries);
+    HeN_mt->AddProperty("ABSLENGTH",     HeN_Energy, HeN_ABSL,  nEntries);
 
     HeN_mt->AddConstProperty("SCINTILLATIONYIELD", fScintYield/MeV   );
     HeN_mt->AddConstProperty("RESOLUTIONSCALE" ,   1.0        );
@@ -1036,51 +1345,32 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     //add these properties to GasMix
     fNistManager->FindOrBuildMaterial("ATGasMix")->SetMaterialPropertiesTable(HeN_mt);
-    fNistManager->FindOrBuildMaterial("ATGasPure")->SetMaterialPropertiesTable(HeN_mt);
 
-    G4double photonEnergy[] =
-    {2.00*eV,2.03*eV,2.06*eV,2.09*eV,2.12*eV,2.15*eV,2.18*eV,2.21*eV,2.24*eV,2.27*eV,
-     2.30*eV,2.33*eV,2.36*eV,2.39*eV,2.42*eV,2.45*eV,2.48*eV,2.51*eV,2.54*eV,2.57*eV,
-     2.60*eV,2.63*eV,2.66*eV,2.69*eV,2.72*eV,2.75*eV,2.78*eV,2.81*eV,2.84*eV,2.87*eV,
-     2.90*eV,2.93*eV,2.96*eV,2.99*eV,3.02*eV,3.05*eV,3.08*eV,3.11*eV,3.14*eV,3.17*eV,
-     3.20*eV,3.23*eV,3.26*eV,3.29*eV,3.32*eV,3.35*eV,3.38*eV,3.41*eV,3.44*eV,3.47*eV};
+    //------------------------------------------------------------------------------
+    //Saint-Gobain BCF-92 WLS
+    //------------------------------------------------------------------------------
 
-    const G4int nEntries = sizeof(photonEnergy)/sizeof(G4double);
+    G4double WLS_RIND[nEntries] =
+    {1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
+     1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60};
 
-    G4double refractiveIndexWLSfiber[] =
-    { 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-      1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60};
+    G4double WLS_ABSL[nEntries] =
+    {5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m, 5.40*m,
+     5.40*m, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm, 1.0*mm};
+    // Absorption spectra amplitudes for comparison
+    //{0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
+    // 0.00, 0.05, 0.45, 0.85, 0.95, 0.70, 0.35, 0.05, 0.00};
 
-    assert(sizeof(refractiveIndexWLSfiber) == sizeof(photonEnergy));
-
-    G4double absWLSfiber[] =
-    {5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,
-     5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,
-     5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,1.10*m,
-     1.10*m,1.10*m,1.10*m,1.10*m,1.10*m,1.10*m, 1.*mm, 1.*mm, 1.*mm, 1.*mm,
-      1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm};
-
-    assert(sizeof(absWLSfiber) == sizeof(photonEnergy));
-
-    G4double emissionFib[] =
-    {0.05, 0.10, 0.30, 0.50, 0.75, 1.00, 1.50, 1.85, 2.30, 2.75,
-     3.25, 3.80, 4.50, 5.20, 6.00, 7.00, 8.50, 9.50, 11.1, 12.4,
-     12.9, 13.0, 12.8, 12.3, 11.1, 11.0, 12.0, 11.0, 17.0, 16.9,
-     15.0, 9.00, 2.50, 1.00, 0.05, 0.00, 0.00, 0.00, 0.00, 0.00,
-     0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
-
-    assert(sizeof(emissionFib) == sizeof(photonEnergy));
+    G4double WLS_SCINT[nEntries] =
+    {0.00, 0.00, 0.00, 0.08, 0.10, 0.20, 0.35, 0.60, 0.97,
+     0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
 
     // Add entries into properties table
     G4MaterialPropertiesTable* WLS_mt = new G4MaterialPropertiesTable();
-    WLS_mt->AddProperty("RINDEX",photonEnergy,refractiveIndexWLSfiber,nEntries);
-    //WLS_mt->AddProperty("ABSLENGTH",photonEnergy,absWLSfiber,nEntries);
-    WLS_mt->AddProperty("WLSABSLENGTH",photonEnergy,absWLSfiber,nEntries);
-    WLS_mt->AddProperty("WLSCOMPONENT",photonEnergy,emissionFib,nEntries);
-    WLS_mt->AddConstProperty("WLSTIMECONSTANT", 0.5*ns);
+    WLS_mt->AddProperty("RINDEX", HeN_Energy, WLS_RIND, nEntries);
+    WLS_mt->AddProperty("WLSABSLENGTH", HeN_Energy, WLS_ABSL, nEntries);
+    WLS_mt->AddProperty("WLSCOMPONENT", HeN_Energy, WLS_SCINT, nEntries);
+    WLS_mt->AddConstProperty("WLSTIMECONSTANT", 2.7*ns);
 
     fNistManager->FindOrBuildMaterial("PMMA")->SetMaterialPropertiesTable(WLS_mt);
 
@@ -1090,12 +1380,12 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     //PTFE reflectivity from Janecek
     //"REFLECTIVITY SPECTRA FOR COMMONLY USED REFLECTORS"
-    G4double PTFE_Reflectivity[nentries] =
+    G4double PTFE_Reflectivity[nEntries] =
     {0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95,
      0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95};
 
     G4MaterialPropertiesTable* Teflon_mt = new G4MaterialPropertiesTable();
-    Teflon_mt->AddProperty("REFLECTIVITY",HeN_Energy, PTFE_Reflectivity ,nentries);
+    Teflon_mt->AddProperty("REFLECTIVITY",HeN_Energy, PTFE_Reflectivity ,nEntries);
 
     fNistManager->FindOrBuildMaterial("ATTeflon")->SetMaterialPropertiesTable(Teflon_mt);
 
@@ -1104,26 +1394,26 @@ void A2ActiveHe3::SetOpticalProperties() {
     //------------------------------------------------------------------------------
 
     //flat 95% according to Seian's thesis
-    G4double mylar_REFL[nentries] =
+    G4double mylar_REFL[nEntries] =
     {0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95,
      0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95};
 
     //These seem to be the same as for quartz. In terms of the simulation
     //these numbers are not very relevant. Interpolated and extrapolated
     //results of Seian to match my energies and range
-    // G4double mylar_RIND[nentries] =
+    // G4double mylar_RIND[nEntries] =
     //   {1.51551, 1.5173, 1.51899, 1.52084, 1.52256, 1.52418, 1.52611,
     //    1.52752, 1.52931, 1.53097, 1.53321, 1.53548, 1.53828, 1.54184,
     //    1.54528, 1.55176, 1.55819, 1.56375};
 
     //http://www.filmetrics.com/refractive-index-database/PET/Estar-Melinex-Mylar
-    G4double mylar_RIND[nentries] =
+    G4double mylar_RIND[nEntries] =
     {1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68,
      1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68};
 
     G4MaterialPropertiesTable* Mylar_mt = new G4MaterialPropertiesTable();
-    Mylar_mt->AddProperty("REFLECTIVITY",HeN_Energy, mylar_REFL ,nentries);
-    Mylar_mt->AddProperty("RINDEX",HeN_Energy,mylar_RIND, nentries);
+    Mylar_mt->AddProperty("REFLECTIVITY",HeN_Energy, mylar_REFL ,nEntries);
+    Mylar_mt->AddProperty("RINDEX",HeN_Energy,mylar_RIND, nEntries);
 
     fNistManager->FindOrBuildMaterial("ATMylarW")->SetMaterialPropertiesTable(Mylar_mt);
 
@@ -1133,19 +1423,19 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     //the film refractive index at 589 nm from Martin Sharratt's e-mail
     //no dependency known
-    G4double Epoxy_RIND[nentries] =
+    G4double Epoxy_RIND[nEntries] =
     {1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54,
      1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54, 1.54};
 
     //use 1, the pmt acceptance spectrum already includes the epoxy effect according
     //to e-mail from Sharratt
-    G4double Epoxy_Transmittance[nentries] =
+    G4double Epoxy_Transmittance[nEntries] =
     {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
     G4MaterialPropertiesTable *Epoxy_mt = new G4MaterialPropertiesTable();
-    Epoxy_mt->AddProperty("RINDEX",HeN_Energy,Epoxy_RIND, nentries);
-    Epoxy_mt->AddProperty("TRANSMITTANCE", HeN_Energy, Epoxy_Transmittance, nentries);
+    Epoxy_mt->AddProperty("RINDEX",HeN_Energy,Epoxy_RIND, nEntries);
+    Epoxy_mt->AddProperty("TRANSMITTANCE", HeN_Energy, Epoxy_Transmittance, nEntries);
 
     fNistManager->FindOrBuildMaterial("ATEpoxy")->SetMaterialPropertiesTable(Epoxy_mt);
 
@@ -1155,36 +1445,24 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     // detect every photon that hits the pmt. This can be used to correlate which
     // wavelengths are detected more efficiently
-    G4double SiPMT_EFF[nentries] =
+    G4double SiPMT_EFF[nEntries] =
     {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
     // Photocathod reflectivity, currently 0, so detect all
-    G4double SiPMT_REFL[nentries]   =
+    G4double SiPMT_REFL[nEntries]   =
     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     G4MaterialPropertiesTable *SiPMT_mt = new G4MaterialPropertiesTable();
-    SiPMT_mt->AddProperty("EFFICIENCY",HeN_Energy,SiPMT_EFF, nentries);
-    SiPMT_mt->AddProperty("REFLECTIVITY",HeN_Energy,SiPMT_REFL, nentries);
+    SiPMT_mt->AddProperty("EFFICIENCY",HeN_Energy,SiPMT_EFF, nEntries);
+    SiPMT_mt->AddProperty("REFLECTIVITY",HeN_Energy,SiPMT_REFL, nEntries);
 
     fNistManager->FindOrBuildMaterial("ATSiPMT")->SetMaterialPropertiesTable(SiPMT_mt);
 
     //------------------------------------------------------------------------------
     //Create optical surfaces
     //------------------------------------------------------------------------------
-
-    //WLS surface.  It should reflect, refract or absorb
-    if (fIsWLS) {
-        //G4OpticalSurface* OptWLSSurface =
-        fSurface = new G4OpticalSurface("OWLSSurface",  unified, polished, dielectric_dielectric);
-        fSurface->SetMaterialPropertiesTable(WLS_mt);
-        //OptWLSSurface->SetMaterialPropertiesTable(WLS_mt);
-
-        //new G4LogicalSkinSurface("LSWLSSurface", fWLSLogic, OptWLSSurface);
-    }
-
-    //------------------------------------------------------------------------------------
 
     //teflon - only lambertian reflection, relatively OK simple approximation
     G4OpticalSurface* OptTeflonSurface =
@@ -1231,7 +1509,7 @@ void A2ActiveHe3::SetOpticalProperties() {
 
     new G4LogicalSkinSurface("LSPmtSurfarce", fPMTLogic, OptPmtSurface);
 
-} //end SetOpticalProperties()
+} //end SetOpticalPropertiesHeN()
 
 void A2ActiveHe3::SetScintillationYield(G4double scintyield) {
 
@@ -1245,6 +1523,7 @@ void A2ActiveHe3::SetScintillationYield(G4double scintyield) {
                   fScintYield << " per MeV" << G4endl;
     }
 }
+
 void A2ActiveHe3::DefineMaterials()
 {
     G4double density, fractionmass;
@@ -1378,9 +1657,9 @@ void A2ActiveHe3::ReadParameters(const char* file)
             if( iread != 1 ) ierr++;
             break;
         case ERun_Mode:
-            iread = sscanf(line,"%*s%d%d%d%d",
-                           &fIsOverlapVol,&fIsWLS,&fOpticalSimulation,&fMakeMylarSections);
-            if( iread != 4 ) ierr++;
+            iread = sscanf(line,"%*s%d%d%d%d%d",
+                           &fIsOverlapVol,&fIsWLS,&fOpticalSimulation,&fIsTPB,&fMakeMylarSections);
+            if( iread != 5 ) ierr++;
             break;
         }
         if( ierr ){
@@ -1401,10 +1680,12 @@ This function builds the sensitive detector
 void A2ActiveHe3::MakeSensitiveDetector(){
     if(!fAHe3SD){
         G4SDManager* SDman = G4SDManager::GetSDMpointer();
-        fAHe3SD = new A2SD("AHe3SD",fNwls);
+        fAHe3SD = new A2SD("AHe3SD",2*fNwls);
         SDman->AddNewDetector(fAHe3SD);
-        fWLSLogic->SetSensitiveDetector(fAHe3SD);
-        fRegionAHe3->AddRootLogicalVolume(fWLSLogic);
+        //fWLSLogic->SetSensitiveDetector(fAHe3SD);
+        //fRegionAHe3->AddRootLogicalVolume(fWLSLogic);
+        fPMTLogic->SetSensitiveDetector(fAHe3SD);
+        fRegionAHe3->AddRootLogicalVolume(fPMTLogic);
     }
 }
 

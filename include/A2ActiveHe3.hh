@@ -41,13 +41,16 @@ public:
 
   //functions that build parts of the detector
   void MakeVessel();
-  void MakeWLS();
+  void MakeWLSPlates();
+  void MakeWLSFibers();
+  void MakeWLSHelix();
   void MakePCB();
   void MakeTeflonLayer();
-  void MakeSiPMTs(){}
+  void MakeSiPMTs();
   void MakeMylarSections(G4int nrofsections);
   void DefineMaterials();
-  void SetOpticalProperties();
+  void SetOpticalPropertiesTPB();
+  void SetOpticalPropertiesHeN();
   void SetIsOverlapVol(G4int isOv){ fIsOverlapVol = isOv; }
   void ReadParameters(const char*);
   void MakeSensitiveDetector();
@@ -74,6 +77,7 @@ private:
   G4double fScintYield;
   //
   G4int fIsWLS;
+  G4int fIsTPB;
 
   //------------------------------------------------------------------------
   //volumes
@@ -85,6 +89,7 @@ private:
 
   //Logical volumes of this specific detector class
   G4LogicalVolume* fVesselLogic;        //mother for Aluminum vessel and Be windows
+  G4LogicalVolume* fHeLogic;            //mother to WLS logic
   G4LogicalVolume* fHeOutsideTeflonLogic; //mother to fPCMLogic
   G4LogicalVolume* fWLSLogic;           //WLS plate logic
   G4LogicalVolume* fPCBLogic;           //mother for Printed circuit board
