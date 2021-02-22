@@ -13,6 +13,7 @@
 #include "G4Gamma.hh"
 #include "G4Proton.hh"
 #include "G4OpticalPhoton.hh"
+#include "G4SDManager.hh"
 #include "G4SteppingManager.hh"
 #include "G4RunManager.hh"
 #include "CLHEP/Units/SystemOfUnits.h"
@@ -40,46 +41,53 @@ A2SteppingAction::~A2SteppingAction()
 void A2SteppingAction::UserSteppingAction(const G4Step* aStep)
 {
   G4Track* track = aStep->GetTrack();
-  G4StepPoint* endPoint   = aStep->GetPostStepPoint();
+
   G4StepPoint* startPoint = aStep->GetPreStepPoint();
+  G4StepPoint* endPoint   = aStep->GetPostStepPoint();
 
   G4String particleName = track->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
 
-  const G4VProcess* pds = endPoint->GetProcessDefinedStep();
-  G4cout << particleName << "\t" << pds->GetProcessName() << "\t" << startPoint->GetPhysicalVolume()->GetName();
+  //G4cout << particleName << "\t" << pds->GetProcessName() << "\t" << startPoint->GetPhysicalVolume()->GetName()<< " to " << endPoint->GetPhysicalVolume()->GetName();
   //G4cout << "\t" << startPoint->GetPhysicalVolume()->GetLogicalVolume()->GetMaterial()->GetMaterialPropertiesTable()->GetConstProperty("SCINTILLATIONYIELD");
-  G4cout << "\t" << startPoint->GetPosition() << "\t" << endPoint->GetPosition() << G4endl;
+  //G4cout << G4endl;
 
   if (particleName == "opticalphoton") {
+      G4OpBoundaryProcess* fOpProcess;
 
-      // optical process has endpt on bdry,
-      if (endPoint->GetStepStatus() == fGeomBoundary) {
+      // Retrieve the status of the photon
+      G4OpBoundaryProcessStatus theStatus = Undefined;
 
-          const G4DynamicParticle* theParticle = track->GetDynamicParticle();
+      G4ProcessManager* OpManager =
+              G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
 
-          G4ThreeVector oldMomentumDir = theParticle->GetMomentumDirection();
-
-          G4ThreeVector m0 = startPoint->GetMomentumDirection();
-          G4ThreeVector m1 = endPoint->GetMomentumDirection();
-
-          G4OpBoundaryProcessStatus theStatus = Undefined;
-
-          G4ProcessManager* OpManager =
-                  G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
+      if (OpManager) {
           G4int MAXofPostStepLoops =
                   OpManager->GetPostStepProcessVector()->entries();
-          G4ProcessVector* postStepDoItVector =
+          G4ProcessVector* fPostStepDoItVector =
                   OpManager->GetPostStepProcessVector(typeDoIt);
 
-          for (G4int i=0; i<MAXofPostStepLoops; ++i) {
-              G4VProcess* currentProcess = (*postStepDoItVector)[i];
+          for ( G4int i=0; i<MAXofPostStepLoops; i++) {
+              G4VProcess* fCurrentProcess = (*fPostStepDoItVector)[i];
+              fOpProcess = dynamic_cast<G4OpBoundaryProcess*>(fCurrentProcess);
+              if (fOpProcess) { theStatus = fOpProcess->GetStatus(); break;}
+          }
+      }
 
-              G4OpBoundaryProcess* opProc =
-                      dynamic_cast<G4OpBoundaryProcess*>(currentProcess);
-              if (opProc) {
-                  theStatus = opProc->GetStatus();
-                  G4cout << theStatus << G4endl;
-              }
+      // Detected by a detector
+      if (theStatus == Detection) {
+          //G4cout << "Detected in " << startPoint->GetPhysicalVolume()->GetName() << "\t" << aStep->GetTotalEnergyDeposit()/eV << G4endl;
+
+          // Check if the photon hits the detector and process the hit if it does
+          if ( startPoint->GetPhysicalVolume()->GetLogicalVolume()->GetName() == "LogicSiPMT" ) {
+
+              G4SDManager* SDman = G4SDManager::GetSDMpointer();
+              A2SD* AHe3SD = (A2SD*)SDman->FindSensitiveDetector("AHe3SD");
+
+              //if (AHe3SD) AHe3SD->ProcessHits_AHe3(aStep, NULL);
+
+              // Stop Tracking when it hits the detector's surface
+              //ResetCounters();
+              track->SetTrackStatus(fStopAndKill);
           }
       }
   }
