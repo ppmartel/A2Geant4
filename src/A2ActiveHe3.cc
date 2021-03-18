@@ -403,7 +403,7 @@ void A2ActiveHe3::MakeWLSPlates()
     G4double z0 = fHeContainerZ/2 - fLatClr;
     G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
     G4double d1 = d0 - fWLSthick*tan(th/2);
-    fWLSwidth = d1;
+    fWLSwidth = 2*d1;
     G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
     //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
     fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
@@ -428,18 +428,23 @@ void A2ActiveHe3::MakeWLSFibers()
 }
 
 //-----------------------------------------------------------------------------------
-// Placeholder for helix design, currently just same as the original barrel design
+// Simplistic helix design, making a wrap of fiber one cylinder ring, with a slice for the SiPMs
 //-----------------------------------------------------------------------------------
 
 void A2ActiveHe3::MakeWLSHelix()
 {
-    G4double th = 360.0*deg/fNwls;
     G4double r0 = fHeContainerR - fRadClr;
-    fRwls1 = r0*cos(th/2) - 0.5*fWLSthick;
-    G4double z0 = fHeContainerZ/2 - fLatClr;
-    G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
-    G4double d1 = d0 - fWLSthick*tan(th/2);
-    G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
+    fRwls1 = r0 - 0.5*fWLSthick;
+    G4double z0 = ((fHeContainerZ/2 - fLatClr)/fNwls) - 0.05*cm; // slightly smaller so rings dont touch;
+    fWLSwidth = 2*z0;
+
+    //G4Tubs* wls = new G4Tubs("WLS-ring", r0 - fWLSthick, r0, z0, 5*deg, 355*deg);
+
+    G4Tubs* ring = new G4Tubs("Base-ring", r0 - fWLSthick, r0, z0, 0*deg, 360*deg);
+    G4Box* cut = new G4Box("Base-cut", fWLSthick, 1*mm, 1.1*z0);
+    G4Transform3D transform(G4RotationMatrix(0, 0, 0), G4ThreeVector(fRwls1, 0, 0));
+    G4SubtractionSolid* wls = new G4SubtractionSolid("WLS-ring", ring, cut, transform);
+
     //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
     fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
     G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
@@ -999,22 +1004,38 @@ void A2ActiveHe3::PlaceParts() {
         G4double th = 360*deg/fNwls;
         G4double th2 = 0.0;
         for(G4int iw=0; iw<fNwls; iw++){
-            G4RotationMatrix* pp = new G4RotationMatrix();
+            G4RotationMatrix* pp1 = new G4RotationMatrix();
             G4RotationMatrix* pp2 = new G4RotationMatrix();
             G4double th1 = iw*th;
-            if(fIsWLS == 1) {
-                pp->rotateY(90*deg);               // align parallel beam axis
-                pp->rotateX(th1);                  // align for side of polygon
-                fNpmt = 2*fWLSwidth/(6.1*mm);
-            }
-            else if(fIsWLS == 2) pp->rotateZ(th1); // align for side of fiber
-            pp2->rotateZ(th1);                     // alignment for epoxy/SiPM
+
+            G4double z0 = fHeContainerZ/2 - fLatClr;
+            //G4double z0 = ((fHeContainerZ/2 - fLatClr)/fNwls) - 0.05*mm; // slightly smaller so rings dont touch;
+
             G4double xw = fRwls1*cos(th2);         // coordinates for polygon side/fiber center
             G4double yw = fRwls1*sin(th2);
+            G4double zw = 0;
+
+            if(fIsWLS == 1) {
+                fNpmt = fWLSwidth/(6.1*mm);
+                pp1->rotateY(90*deg);               // align parallel beam axis
+                pp1->rotateX(th1);                  // align for side of polygon
+                pp2->rotateZ(th1);                 // alignment for epoxy/SiPM
+            }
+            else if(fIsWLS == 2) {
+                pp1->rotateZ(th1);                  // align for side of fiber
+                pp2->rotateZ(th1);                 // alignment for epoxy/SiPM
+            }
+            else if(fIsWLS == 3) {
+                fNpmt = fWLSwidth/(6.1*mm);
+                xw = yw = 0;
+                zw = -z0 + 0.5*fWLSwidth + iw*(fWLSwidth + 0.1*cm);
+                pp2->rotateX(90*deg);              // alignment for epoxy/SiPM
+            }
+
             char nw[16];
             sprintf(nw,"PWLS_%d",iw);
-            G4VPhysicalVolume* WLSPhysi = new G4PVPlacement (pp,
-                                                             G4ThreeVector(xw, yw, 0),
+            G4VPhysicalVolume* WLSPhysi = new G4PVPlacement (pp1,
+                                                             G4ThreeVector(xw, yw, zw),
                                                              fWLSLogic,
                                                              nw,
                                                              fHeLogic,             //mother logic (He)
@@ -1024,13 +1045,32 @@ void A2ActiveHe3::PlaceParts() {
             sprintf(nw,"SWLS_%d",iw);
             //new G4LogicalBorderSurface(nw, WLSPhysi, HePhysi, fSurface);
 
-            G4double z0 = fHeContainerZ/2 - fLatClr;
+            G4ThreeVector ep1, pm1, ep2, pm2;
 
             for(G4int ip=0; ip<fNpmt; ip++){
+                if(fIsWLS == 1) {
+                    ep1 = G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), -z0 - 0.05*mm);
+                    pm1 = G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), -z0 - 0.15*mm);
+                    ep2 = G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2),  z0 + 0.05*mm);
+                    pm2 = G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2),  z0 + 0.15*mm);
+                }
+                else if(fIsWLS == 2) {
+                    ep1 = G4ThreeVector(xw, yw, -z0 - 0.05*mm);
+                    pm1 = G4ThreeVector(xw, yw, -z0 - 0.15*mm);
+                    ep2 = G4ThreeVector(xw, yw,  z0 + 0.05*mm);
+                    pm2 = G4ThreeVector(xw, yw,  z0 + 0.15*mm);
+                }
+                else if(fIsWLS == 3) {
+                    ep1 = G4ThreeVector(fRwls1, -0.95*mm, zw + (ip-0.5*(fNpmt-1))*6.1*mm);
+                    pm1 = G4ThreeVector(fRwls1, -0.85*mm, zw + (ip-0.5*(fNpmt-1))*6.1*mm);
+                    ep2 = G4ThreeVector(fRwls1,  0.95*mm, zw + (ip-0.5*(fNpmt-1))*6.1*mm);
+                    pm2 = G4ThreeVector(fRwls1,  0.85*mm, zw + (ip-0.5*(fNpmt-1))*6.1*mm);
+                }
+
                 sprintf(nw,"PEpoxy_%d_%d",iw,ip);
                 //fEpoxyPhysic[2*npmt*iw+ip] =
                 new G4PVPlacement (pp2,
-                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), -z0 - 0.05*mm),
+                                   ep1,
                                    fEpoxyLogic,
                                    nw,
                                    fHeLogic,             //mother logic (He)
@@ -1040,7 +1080,7 @@ void A2ActiveHe3::PlaceParts() {
                 sprintf(nw,"PPMT_%d_%d",iw,ip);
                 //fPMTPhysic[2*npmt*iw+ip] =
                 new G4PVPlacement (pp2,
-                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), -z0 - 0.15*mm),
+                                   pm1,
                                    fPMTLogic,
                                    nw,
                                    fHeLogic,             //mother logic (He)
@@ -1050,7 +1090,7 @@ void A2ActiveHe3::PlaceParts() {
                 sprintf(nw,"PEpoxy_%d_%d",iw,ip+fNpmt);
                 //fEpoxyPhysic[2*npmt*iw+ip+npmt] =
                 new G4PVPlacement (pp2,
-                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), z0 + 0.05*mm),
+                                   ep2,
                                    fEpoxyLogic,
                                    nw,
                                    fHeLogic,             //mother logic (He)
@@ -1060,7 +1100,7 @@ void A2ActiveHe3::PlaceParts() {
                 sprintf(nw,"PPMT_%d_%d",iw,ip+fNpmt);
                 //fPMTPhysic[2*npmt*iw+ip+npmt] =
                 new G4PVPlacement (pp2,
-                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), z0 + 0.15*mm),
+                                   pm2,
                                    fPMTLogic,
                                    nw,
                                    fHeLogic,             //mother logic (He)
