@@ -122,10 +122,12 @@ private:
 
   // geometric parameters for MakeWLS()
   G4int fNwls;            // phi segmentation
-  G4double fWLSthick;     // plate thickness
+  G4int fNpmt;
+  G4double fWLSthick;     // WLS thickness
+  G4double fWLSwidth;     // WLS width
   G4double fRadClr;       // radial clearance to vessel
   G4double fLatClr;       // lateral clearance to vessel
-  G4double fRwls1;        // radial pos. plate centre
+  G4double fRwls1;        // radial pos. plate/fiber centre
   
   //geometric parameters for MakePCB()
   G4double fPCBThickness; //thickness of the printed circuit board

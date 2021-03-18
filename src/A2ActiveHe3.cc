@@ -71,7 +71,9 @@ A2ActiveHe3::A2ActiveHe3() {
     fIsWLS = 1;
     fIsTPB = 1;
     fNwls = 8;                       // phi segmentation
+    fNpmt = 1;                       // number of PMTs per side
     fWLSthick = 3*mm;                // thickness WLS plate
+    fWLSwidth = 3*mm;                // width WLS plate
     fRadClr = 2*mm;                  // radial clearance to vessel
     fLatClr = 5*mm;                  // lateral clearance to vessel
     ReadParameters("data/ActiveHe3.dat");
@@ -401,6 +403,7 @@ void A2ActiveHe3::MakeWLSPlates()
     G4double z0 = fHeContainerZ/2 - fLatClr;
     G4double d0 = r0*sin(th/2) - 0.001*mm; // slightly smaller so plates dont touch
     G4double d1 = d0 - fWLSthick*tan(th/2);
+    fWLSwidth = d1;
     G4Trd* wls = new G4Trd("WLS-bar", z0,z0,d0,d1,fWLSthick/2);
     //fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE"), "LogicWLS");
     fWLSLogic = new G4LogicalVolume(wls, fNistManager->FindOrBuildMaterial("PMMA"), "LogicWLS");
@@ -997,12 +1000,15 @@ void A2ActiveHe3::PlaceParts() {
         G4double th2 = 0.0;
         for(G4int iw=0; iw<fNwls; iw++){
             G4RotationMatrix* pp = new G4RotationMatrix();
+            G4RotationMatrix* pp2 = new G4RotationMatrix();
             G4double th1 = iw*th;
             if(fIsWLS == 1) {
                 pp->rotateY(90*deg);               // align parallel beam axis
                 pp->rotateX(th1);                  // align for side of polygon
+                fNpmt = 2*fWLSwidth/(6.1*mm);
             }
             else if(fIsWLS == 2) pp->rotateZ(th1); // align for side of fiber
+            pp2->rotateZ(th1);                     // alignment for epoxy/SiPM
             G4double xw = fRwls1*cos(th2);         // coordinates for polygon side/fiber center
             G4double yw = fRwls1*sin(th2);
             char nw[16];
@@ -1020,46 +1026,47 @@ void A2ActiveHe3::PlaceParts() {
 
             G4double z0 = fHeContainerZ/2 - fLatClr;
 
-            sprintf(nw,"PEpoxyU_%d",iw);
-            //fEpoxyPhysic[2*iw] =
-            new G4PVPlacement (pp,
-                               G4ThreeVector(xw, yw, -z0 - 0.05*mm),
-                               fEpoxyLogic,
-                               nw,
-                               fHeLogic,             //mother logic (He)
-                               false,                //pMany = false
-                               2*iw+200,fIsOverlapVol);    //copy number
+            for(G4int ip=0; ip<fNpmt; ip++){
+                sprintf(nw,"PEpoxy_%d_%d",iw,ip);
+                //fEpoxyPhysic[2*npmt*iw+ip] =
+                new G4PVPlacement (pp2,
+                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), -z0 - 0.05*mm),
+                                   fEpoxyLogic,
+                                   nw,
+                                   fHeLogic,             //mother logic (He)
+                                   false,                //pMany = false
+                                   2*fNpmt*iw+ip+200,fIsOverlapVol);    //copy number
 
-            sprintf(nw,"PPMTU_%d",iw);
-            //fPMTPhysic[2*iw] =
-            new G4PVPlacement (pp,
-                               G4ThreeVector(xw, yw, -z0 - 0.15*mm),
-                               fPMTLogic,
-                               nw,
-                               fHeLogic,             //mother logic (He)
-                               false,                //pMany = false
-                               2*iw,fIsOverlapVol);    //copy number
+                sprintf(nw,"PPMT_%d_%d",iw,ip);
+                //fPMTPhysic[2*npmt*iw+ip] =
+                new G4PVPlacement (pp2,
+                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), -z0 - 0.15*mm),
+                                   fPMTLogic,
+                                   nw,
+                                   fHeLogic,             //mother logic (He)
+                                   false,                //pMany = false
+                                   2*fNpmt*iw+ip,fIsOverlapVol);    //copy number
 
-            sprintf(nw,"PEpoxyD_%d",iw);
-            //fEpoxyPhysic[2*iw+1] =
-            new G4PVPlacement (pp,
-                               G4ThreeVector(xw, yw, z0 + 0.05*mm),
-                               fEpoxyLogic,
-                               nw,
-                               fHeLogic,             //mother logic (He)
-                               false,                //pMany = false
-                               2*iw+201,fIsOverlapVol);    //copy number
+                sprintf(nw,"PEpoxy_%d_%d",iw,ip+fNpmt);
+                //fEpoxyPhysic[2*npmt*iw+ip+npmt] =
+                new G4PVPlacement (pp2,
+                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), z0 + 0.05*mm),
+                                   fEpoxyLogic,
+                                   nw,
+                                   fHeLogic,             //mother logic (He)
+                                   false,                //pMany = false
+                                   2*fNpmt*iw+ip+fNpmt+200,fIsOverlapVol);    //copy number
 
-            sprintf(nw,"PPMTD_%d",iw);
-            //fPMTPhysic[2*iw+1] =
-            new G4PVPlacement (pp,
-                               G4ThreeVector(xw, yw, z0 + 0.15*mm),
-                               fPMTLogic,
-                               nw,
-                               fHeLogic,             //mother logic (He)
-                               false,                //pMany = false
-                               2*iw+1,fIsOverlapVol);    //copy number
-
+                sprintf(nw,"PPMT_%d_%d",iw,ip+fNpmt);
+                //fPMTPhysic[2*npmt*iw+ip+npmt] =
+                new G4PVPlacement (pp2,
+                                   G4ThreeVector(xw + (ip-0.5*(fNpmt-1))*6.1*mm*sin(th2), yw - (ip-0.5*(fNpmt-1))*6.1*mm*cos(th2), z0 + 0.15*mm),
+                                   fPMTLogic,
+                                   nw,
+                                   fHeLogic,             //mother logic (He)
+                                   false,                //pMany = false
+                                   2*fNpmt*iw+ip+fNpmt,fIsOverlapVol);    //copy number
+            }
             th2 -= th;
         }
     }
@@ -1680,7 +1687,7 @@ This function builds the sensitive detector
 void A2ActiveHe3::MakeSensitiveDetector(){
     if(!fAHe3SD){
         G4SDManager* SDman = G4SDManager::GetSDMpointer();
-        fAHe3SD = new A2SD("AHe3SD",2*fNwls);
+        fAHe3SD = new A2SD("AHe3SD",2*fNwls*fNpmt);
         SDman->AddNewDetector(fAHe3SD);
         //fWLSLogic->SetSensitiveDetector(fAHe3SD);
         //fRegionAHe3->AddRootLogicalVolume(fWLSLogic);
