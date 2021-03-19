@@ -74,6 +74,8 @@ G4bool A2SD::ProcessHits(G4Step* aStep,G4TouchableHistory*)
   if((mothervolume->GetName().contains("COVR"))&&(aStep->GetPreStepPoint()->GetGlobalTime()>2000*ns))return false;
   else if (aStep->GetPreStepPoint()->GetGlobalTime()>600*ns)return false; 
 
+  if(volume->GetName().contains("PhysiHe")) return false;
+
   // energy correction for non-linearity in plastic scintillators
   //if (volume->GetName() == "PID" ||
   //    volume->GetName() == "TVET" ||
@@ -88,12 +90,11 @@ G4bool A2SD::ProcessHits(G4Step* aStep,G4TouchableHistory*)
   G4Track* track = aStep->GetTrack();
   A2UserTrackInformation* track_info = (A2UserTrackInformation*)
                                         track->GetUserInformation();
-
   //if(volume->GetName().contains("Pb")) G4cout<<volume->GetName()<<" id "<<id <<" "<<mothervolume->GetCopyNo()<<" "<<volume->GetCopyNo()<<" edep "<<edep/MeV<<G4endl;
   if (fhitID[id]==-1){
     //if this crystal has already had a hit
     //don't make a new one, add on to old one.   
-    // G4cout<<"Make hit "<<fCollection<<G4endl;    
+    // G4cout<<"Make hit "<<fCollection<<G4endl;
     A2Hit* myHit = new A2Hit;
     myHit->SetID(id);
     myHit->AddEnergy(edep);
