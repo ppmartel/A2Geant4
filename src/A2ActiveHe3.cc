@@ -435,7 +435,7 @@ void A2ActiveHe3::MakeWLSHelix()
 {
     G4double r0 = fHeContainerR - fRadClr;
     fRwls1 = r0 - 0.5*fWLSthick;
-    G4double z0 = ((fHeContainerZ/2 - fLatClr)/fNwls) - 0.05*cm; // slightly smaller so rings dont touch;
+    G4double z0 = ((fHeContainerZ/2 - fLatClr)/fNwls) - 0.25*mm; // slightly smaller so rings dont touch;
     fWLSwidth = 2*z0;
 
     //G4Tubs* wls = new G4Tubs("WLS-ring", r0 - fWLSthick, r0, z0, 5*deg, 355*deg);
@@ -1028,7 +1028,7 @@ void A2ActiveHe3::PlaceParts() {
             else if(fIsWLS == 3) {
                 fNpmt = fWLSwidth/(6.1*mm);
                 xw = yw = 0;
-                zw = -z0 + 0.5*fWLSwidth + iw*(fWLSwidth + 0.1*cm);
+                zw = -z0 + 0.5*fWLSwidth + iw*(fWLSwidth + 0.5*mm);
                 pp2->rotateX(90*deg);              // alignment for epoxy/SiPM
             }
 
