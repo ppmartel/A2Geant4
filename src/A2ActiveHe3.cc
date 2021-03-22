@@ -1028,7 +1028,7 @@ void A2ActiveHe3::PlaceParts() {
             else if(fIsWLS == 3) {
                 fNpmt = fWLSwidth/(6.1*mm);
                 xw = yw = 0;
-                zw = -z0 + 0.5*fWLSwidth + iw*(fWLSwidth + 0.5*mm);
+                zw = -z0 + ((iw + 0.5) * (fWLSwidth + 0.5*mm));
                 pp2->rotateX(90*deg);              // alignment for epoxy/SiPM
             }
 
