@@ -1,27 +1,27 @@
 ##Use the crystal ball?
-/A2/det/useCB 1
+/A2/det/useCB 0
 #if the 3rd number in the next line is negative use old geometry,
 # if positive use new Prakhov geometry
 #the first two numbers give the upper and lower air gap between hemispheres
-/A2/det/setHemiGap 0.4 0.4 -1 cm
+#/A2/det/setHemiGap 0.4 0.4 -1 cm
 # CB crystal geometry implementation: trap=G4Trap, extr=G4ExtrudedSolid
 # G4ExtrudedSolid is default for Geant4 >= 10.4
 #/A2/det/setCBCrystGeo extr
 
 ##Use TAPS?
-/A2/det/useTAPS 1
-/A2/det/setTAPSFile data/taps07.dat
-/A2/det/setTAPSZ 146.35 cm
+/A2/det/useTAPS 0
+#/A2/det/setTAPSFile data/taps07.dat
+#/A2/det/setTAPSZ 146.35 cm
 #/A2/det/setTAPSZ 188 cm
-/A2/det/setTAPSN 384
-/A2/det/setTAPSPbWO4Rings 2
+#/A2/det/setTAPSN 384
+#/A2/det/setTAPSPbWO4Rings 2
 #/A2/det/setTAPSFile data/taps.dat
 #/A2/det/setTAPSZ 175 cm
 #/A2/det/setTAPSN 510
 
 ##Use the PID
 /A2/det/usePID 0
-/A2/det/setPIDZ 0. cm
+#/A2/det/setPIDZ 0. cm
 #/A2/det/setPIDRotation 10 deg
 
 ##Use MWPC
