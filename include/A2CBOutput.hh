@@ -18,6 +18,7 @@ const G4int MAXSIZE_PID= 24;
 const G4int MAXSIZE_MWPC = 400;
 const G4int MAXSIZE_PIZZA = 24;
 const G4int MAXSIZE_HE3 = 200;
+const G4int MAXSIZE_TPC = 200; //just copying ahet code
 
 class A2CBOutput 
 {
@@ -41,6 +42,7 @@ protected:
   Float_t fectapfs[MAXSIZE_TAPS];  //Fast compenent of energy deposited in TAPS crystals 
   Float_t fectapsl[MAXSIZE_TAPS];  //Slow compenent of energy deposited in TAPS crystals(currently Edep in taps)
   Float_t *felab;    //Energy of initial generatd particles
+  Float_t *fklab;    //kinetic energy of initial generated particles (for energy resolution in TPC)
   Float_t feleak;    //Energy leaking out of system (NOT CURRENTLY IMPLEMENTED)
   Float_t fenai;     //Total energy deposited in NaI
   Float_t fetot;     //Total energy deposited in all detectors
@@ -91,6 +93,11 @@ protected:
   //Float_t fhe3x[MAXSIZE_HE3]; //x position
   //Float_t fhe3y[MAXSIZE_HE3]; //y position
   //Float_t fhe3z[MAXSIZE_HE3]; //z position
+  //new 2021: TPC hits
+  Int_t fntpc; //total hits on tpc anode
+  Int_t fitpc[MAXSIZE_TPC]; //hit section index
+  Float_t fqtpc[MAXSIZE_TPC]; //hit energy deposit
+  Float_t fttpc[MAXSIZE_TPC]; //hit time
   
   Int_t fnpiz; //Number of hits in Pizza detector
   Int_t fipiz[MAXSIZE_PIZZA]; //hit sector indexes

@@ -70,11 +70,14 @@ G4bool A2SD::ProcessHits(G4Step* aStep,G4TouchableHistory*)
   //if(volume->GetName().contains("TAPS")||volume->GetName().contains("PbWO"))id=mothervolume->GetCopyNo()+volume->GetCopyNo();
   if(mothervolume->GetName().contains("COVR"))id=mothervolume->GetCopyNo()+volume->GetCopyNo();
   else id = volume->GetCopyNo();
+  //troubleshooting
+  if(mothervolume->GetName().contains("TPC"))G4cout<<id<<G4endl;
   //seperate ADC gates for TAPS
   if((mothervolume->GetName().contains("COVR"))&&(aStep->GetPreStepPoint()->GetGlobalTime()>2000*ns))return false;
   else if (aStep->GetPreStepPoint()->GetGlobalTime()>600*ns)return false; 
 
   if(volume->GetName().contains("PhysiHe")) return false;
+  //add analagous declaration for TPC? Or create PhysiHe for TPC?
 
   // energy correction for non-linearity in plastic scintillators
   //if (volume->GetName() == "PID" ||
@@ -90,6 +93,8 @@ G4bool A2SD::ProcessHits(G4Step* aStep,G4TouchableHistory*)
   G4Track* track = aStep->GetTrack();
   A2UserTrackInformation* track_info = (A2UserTrackInformation*)
                                         track->GetUserInformation();
+  //use this to get charge of particle hitting detector: for TPC anode
+  G4double qdep = track->GetDynamicParticle()->GetCharge();
   //if(volume->GetName().contains("Pb")) G4cout<<volume->GetName()<<" id "<<id <<" "<<mothervolume->GetCopyNo()<<" "<<volume->GetCopyNo()<<" edep "<<edep/MeV<<G4endl;
   if (fhitID[id]==-1){
     //if this crystal has already had a hit
@@ -98,7 +103,9 @@ G4bool A2SD::ProcessHits(G4Step* aStep,G4TouchableHistory*)
     A2Hit* myHit = new A2Hit;
     myHit->SetID(id);
     myHit->AddEnergy(edep);
+    myHit->AddCharge(qdep); //add the charge of the particle: for TPC anode
     myHit->AddPartEnergy(track_info->GetPartID(), edep);
+    myHit->AddPartCharge(track_info->GetPartID(), qdep);
     myHit->SetPos(aStep->GetPreStepPoint()->GetPosition());
     myHit->SetTime(aStep->GetPreStepPoint()->GetGlobalTime());
     fhitID[id] = fCollection->insert(myHit) -1;
@@ -107,7 +114,9 @@ G4bool A2SD::ProcessHits(G4Step* aStep,G4TouchableHistory*)
   else // This is not new
   {
     (*fCollection)[fhitID[id]]->AddEnergy(edep);
+    (*fCollection)[fhitID[id]]->AddCharge(qdep);
     (*fCollection)[fhitID[id]]->AddPartEnergy(track_info->GetPartID(), edep);
+    (*fCollection)[fhitID[id]]->AddPartCharge(track_info->GetPartID(), qdep);
     // set more realistic hit times
     G4double time = aStep->GetPreStepPoint()->GetGlobalTime();
     if (volume->GetName().contains("TAPS"))

@@ -29,6 +29,7 @@ A2CBOutput::A2CBOutput(){
   //fdircos=new Float_t*[fnpart];
   //for(Int_t i=0;i<fnpart;i++) fdircos[i]=new Float_t[3];
   felab=new Float_t[fnpart]; 
+  fklab=new Float_t[fnpart];
   fplab=new Float_t[fnpart]; 
   fidpart=new Int_t[fnpart]; 
 
@@ -63,6 +64,7 @@ A2CBOutput::~A2CBOutput(){
   delete fidpart;
   delete fplab;
   delete felab;
+  delete fklab;
   // for(Int_t i=0;i<fnpart;i++) delete fdircos[i];
   if(fTree)delete fTree;
 }
@@ -90,6 +92,7 @@ void A2CBOutput::SetBranches(){
   fTree->Branch("ectapfs",fectapfs,"fectapfs[fntaps]/F",basket);
   fTree->Branch("ectapsl",fectapsl,"fectapsl[fntaps]/F",basket);
   fTree->Branch("elab",felab,"felab[fnpart]/F",basket);
+  fTree->Branch("klab",fklab,"fklab[fnpart]/F",basket);
   fTree->Branch("eleak",&feleak,"feleak/F",basket);
   fTree->Branch("enai",&fenai,"fenai/F",basket);
   fTree->Branch("etot",&fetot,"fetot/F",basket);
@@ -138,6 +141,13 @@ void A2CBOutput::SetBranches(){
     fTree->Branch("ehe3",fehe3,"fehe3[fnhe3]/F",basket);
     fTree->Branch("the3",fthe3,"fthe3[fnhe3]/F",basket);
   //}
+  //new 2021
+  //adding tpc based on ahe3
+    fTree->Branch("ntpc",&fntpc,"fntpc/I",basket);
+    fTree->Branch("itpc",fitpc,"fitpc[fntpc]/I",basket);
+    fTree->Branch("qtpc",fqtpc,"fqtpc[fntpc]/F",basket);
+    fTree->Branch("ttpc",fttpc,"fttpc[fntpc]/F",basket);
+    //
   fTree->Branch("npiz",&fnpiz,"fnpiz/I",basket);
   fTree->Branch("ipiz",fipiz,"fipiz[fnpiz]/I",basket);
   fTree->Branch("epiz",fepiz,"fepiz[fnpiz]/F",basket);
@@ -149,7 +159,7 @@ void A2CBOutput::WriteHit(G4HCofThisEvent* HitsColl){
   G4int CollSize=HitsColl->GetNumberOfCollections();
   //G4cout<<"Collection size "<<CollSize<<" "<<HitsColl->GetHC(0)->GetName()<<" "<<HitsColl->GetHC(1)->GetName()<<G4endl;
   //G4cout<<"Collection size "<<CollSize<<G4endl;
-  fnhits=fntaps=fnvtaps=fvhits=fntof=fnpiz=fnmwpc=fnhe3=0;
+  fnhits=fntaps=fnvtaps=fvhits=fntof=fnpiz=fnmwpc=fnhe3=fntpc=0;
   fetot=0;
   G4int hci=0;
   for(G4int i=0;i<CollSize;i++){
@@ -247,6 +257,20 @@ void A2CBOutput::WriteHit(G4HCofThisEvent* HitsColl){
     fihe3[ii]=hit->GetID();
       }
     }
+    //new 2021: adding TPC anode hits
+    if(hc->GetName()=="A2SDHitsAnodeSD"){
+      fntpc=hc_nhits;
+      for(Int_t ii=0;ii<fntpc;ii++){
+        A2Hit* hit=static_cast<A2Hit*>(hc->GetHit(ii));
+	//hit->Print();
+    fqtpc[ii]=hit->GetQdep(); //units???
+    fttpc[ii]=hit->GetTime()/ns;
+        //ftpcx[ii]=hit->GetPos().x()/cm;
+        //ftpcy[ii]=hit->GetPos().y()/cm;
+        //ftpcz[ii]=hit->GetPos().z()/cm;
+    fitpc[ii]=hit->GetID();
+      }
+    }
   }
   
 }
@@ -268,6 +292,7 @@ void A2CBOutput::WriteGenInput(){
     fdircos[i][1]=static_cast<Float_t>(vec.Y());
     fdircos[i][2]=static_cast<Float_t>(vec.Z());
     felab[i]=fGenLorentzVec[i]->E()/GeV;
+    fklab[i]=(fGenLorentzVec[i]->E()-fGenLorentzVec[i]->M())/MeV;
     fplab[i]=fGenLorentzVec[i]->Rho()/GeV;
     fidpart[i]=fGenPartType[i];
   }

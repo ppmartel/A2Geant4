@@ -1,0 +1,36 @@
+## Time Projection Chamber Parameters
+## ACP 20 May 2021
+##
+## Vessel dimensions in mm
+## length of main cell: 281
+## radius of main cell: 92
+## wall thickness : 8
+## length of conical part of main cell : 25
+## extension length : 200
+## extension inner radius : 25
+## end of main cell thickness : 17
+## Be window thickness: 6
+TPC-Dim: 281.0 92.0 8 25.0 200.0 25.0 17.0 6.0
+##
+## Anode specifications in mm
+## Thickness : 1.5
+## Radius : 50
+## Distance of anode from cell end : 25
+## Radial sections : 4
+## Angular sections : 16
+Anode-Dim: 1.5 50 25 4 16
+##
+## Cathode specifications in mm
+## Thickness : 1.0
+## Radius : 50
+## Distance to cathode from cell end : 25
+Cathode-Dim: 1.0 50 25
+##
+##Grid specifications in mm
+## Wire diameter : 0.05
+## Space between wires : 0.5
+Grid-Dim: 0.05 0.5
+##
+## Run Mode 0=no, 1=yes
+## Check overlaps
+Run-Mode: 0 1

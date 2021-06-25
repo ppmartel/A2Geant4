@@ -50,6 +50,13 @@ void A2SteppingAction::UserSteppingAction(const G4Step* aStep)
   //G4cout << particleName << "\t" << pds->GetProcessName() << "\t" << startPoint->GetPhysicalVolume()->GetName()<< " to " << endPoint->GetPhysicalVolume()->GetName();
   //G4cout << "\t" << startPoint->GetPhysicalVolume()->GetLogicalVolume()->GetMaterial()->GetMaterialPropertiesTable()->GetConstProperty("SCINTILLATIONYIELD");
   //G4cout << G4endl;
+  
+  //Need to add some stuff here for sure! Follow AHeT code
+  if (particleName == "e-") {
+	  //propogate through field
+	  //and see if you hit the anode
+//G4https://root.cern/manual/histograms/histo-trial.png 
+  }
 
   if (particleName == "opticalphoton") {
       G4OpBoundaryProcess* fOpProcess;
@@ -95,11 +102,16 @@ void A2SteppingAction::UserSteppingAction(const G4Step* aStep)
 //   G4VPhysicalVolume* volume = track->GetVolume();
   
 //   // collect energy and track length step by step
-//   G4double edep = aStep->GetTotalEnergyDeposit();
+   G4double edep = aStep->GetTotalEnergyDeposit();
   
 //   G4double stepl = 0.;
+//track electrons long enough to let them propogate to anode
+if(track->GetDefinition()->GetParticleName()==G4String("e-")){
+	//G4cout<<"Tracking electron "<<aStep->GetPreStepPoint()->GetGlobalTime()/ns<<" "<<track->GetKineticEnergy()/MeV<<" "<< fpSteppingManager->GetfCurrentVolume()->GetName()<<G4endl;
+	if(aStep->GetPreStepPoint()->GetGlobalTime()>1000*ms)track->SetTrackStatus(fStopAndKill);
+}
 //stop tracking after the trigger time
-  if(aStep->GetPreStepPoint()->GetGlobalTime()>2*ms)track->SetTrackStatus(fStopAndKill);
+else if(aStep->GetPreStepPoint()->GetGlobalTime()>2*ms)track->SetTrackStatus(fStopAndKill);
 //   if(track->GetDefinition()->GetParticleName()==G4String("pi0"))
 //     {G4cout<<"Got a pi0 "<<aStep->GetPreStepPoint()->GetGlobalTime()/ns<<" "<<track->GetKineticEnergy()/MeV<<" "<< fpSteppingManager->GetfCurrentVolume()->GetName()<<G4endl;track->SetTrackStatus(fStopAndKill);}
 //  if(track->GetDefinition()->GetParticleName()==G4String("pi+"))

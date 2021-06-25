@@ -32,20 +32,25 @@ public:
 protected:
 
   G4double fEdep;  // Energy deposited in detector
+  G4double fQdep; // Charge deposited in detector
   G4ThreeVector fPos; // Position of the hit (in what frame?)
   G4int fID; // ID of detector hit
   G4double fTime; // global time of hit
   std::deque<G4double> fPartE; // energies deposited by primary particles
+  std::deque<G4double> fPartQ; // charges deposited by primary particles
 
 public:
 
   void AddEnergy(G4double de) {fEdep += de;};
+  void AddCharge(G4double qe) {fQdep += qe;};
   void SetPos(G4ThreeVector pos) {fPos=pos;};
   void SetID(G4int i) {fID = i;};
   void SetTime(G4double t) {fTime = t;};
   void AddPartEnergy(G4int p, G4double energy);
+  void AddPartCharge(G4int p, G4double charge);
 
   G4double GetEdep() { return fEdep; };
+  G4double GetQdep() { return fQdep; };
   G4ThreeVector GetPos() { return fPos; };
   G4int GetID() { return fID; };
   G4double GetTime() { return fTime; };
