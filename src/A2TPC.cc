@@ -550,7 +550,8 @@ void A2TPC::MakeSensitiveDetector(){
 void A2TPC::MakeField(){
 	//this is getting unruly 
 	fElectricField = new A2ElectricField(); //create a field at zero first
-	fElectricField->Construct();
+	fElectricField->Construct(2);
+	//fElectricField->SetDetectorField(fVesselLogic);
 	/***
 	G4cout<<"Making TPC electric field..."<<G4endl;
 	//create the field: for now uniform, strength 100 kV/cm

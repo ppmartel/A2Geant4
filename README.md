@@ -251,6 +251,13 @@ Command                                        | Meaning
 `/A2/det/targetMagneticCoils Saddle`           | transversely polarized target
 `/A2/det/setTargetMagneticFieldMap map.dat.xz` | magnetic field map (data/wouter_field_map.dat.xz, data/field_map_jul_13_pos.dat.xz)
 
+### Active Targets
+Command                        | Meaning
+:----------------------------- |:-------
+`/A2/det/setTarget ActiveHe3`  | active helium target
+`/A2/det/setTarget TPC`        | time projection chamber
+
+
 ### General Target Options
 Command                        | Meaning
 :----------------------------- |:-------

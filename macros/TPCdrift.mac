@@ -1,0 +1,40 @@
+###tests if recoil particles can exit the TPC
+/run/initialize
+#make the output show up
+/tracking/verbose 1
+#electron: from ionization
+/gun/particle e-
+#position along beam line inside target
+/gun/position 0 0 0
+
+#at each energy, test into vs away from field
+/gun/energy 1 keV
+/gun/direction 0 0 1
+/run/beamOn 1
+/gun/direction 0 0 -1
+/run/beamOn 1
+/gun/energy 2 keV
+/gun/direction 0 0 1
+/run/beamOn 1
+/gun/direction 0 0 -1
+/run/beamOn 1
+/gun/energy 3 keV
+/gun/direction 0 0 1
+/run/beamOn 1
+/gun/direction 0 0 -1
+/run/beamOn 1
+/gun/energy 5 keV
+/gun/direction 0 0 1
+/run/beamOn 1
+/gun/direction 0 0 -1
+/run/beamOn 1
+/gun/energy 10 keV
+/gun/direction 0 0 1
+/run/beamOn 1
+/gun/direction 0 0 -1
+/run/beamOn 1
+/gun/energy 15 keV
+/gun/direction 0 0 1
+/run/beamOn 1
+/gun/direction 0 0 -1
+/run/beamOn 1

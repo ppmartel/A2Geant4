@@ -24,7 +24,7 @@ public:
 
 	void SetFieldValue(G4double fieldValue);
 	void UpdateIntegrator();
-	G4ElectricField* Construct();
+	G4ElectricField* Construct(G4double fieldStrength);
 	void GetFieldValue(const G4double point[4], G4double *field) const;
 
 protected:

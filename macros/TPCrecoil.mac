@@ -1,0 +1,36 @@
+###tests if recoil particles can exit the TPC
+/run/initialize
+#make the output show up
+/tracking/verbose 1
+#alpha particle: recoil for helium-4
+/gun/particle alpha 
+#position along beam line inside target
+/gun/position 0 0 0
+#motion perpendicular to beam line
+/gun/direction 1 0 0
+
+#later implement different theta angles
+#try different angles
+#compton at 200: max recoil KE is 19 MeV
+#compton at 290: max is 37 MeV
+#is this KE or total E??
+#try from 5 to 50
+/gun/energy 20 MeV
+/run/beamOn 1
+/gun/energy 21 MeV
+/run/beamOn 1
+/gun/energy 22 MeV
+/run/beamOn 1
+/gun/energy 23 MeV
+/run/beamOn 1
+/gun/energy 24 MeV
+/run/beamOn 1
+/gun/energy 25 MeV
+/run/beamOn 1
+/gun/energy 26 MeV
+/run/beamOn 1
+/gun/energy 27 MeV
+/run/beamOn 1
+/gun/energy 28 MeV
+/run/beamOn 1
+

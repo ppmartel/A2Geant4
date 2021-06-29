@@ -49,9 +49,9 @@ A2ElectricField::~A2ElectricField(){
 	delete fChordFinder;
 }
 
-G4ElectricField* A2ElectricField::Construct(){
+G4ElectricField* A2ElectricField::Construct(G4double fieldStrength){
 	//do things
-	fField= new G4UniformElectricField(G4ThreeVector(0.0,0.0,2.0*kilovolt/cm));
+	fField= new G4UniformElectricField(G4ThreeVector(0.0,0.0,fieldStrength*kilovolt/cm));
 	fEquation= new G4EqMagElectricField(fField);
 	fFieldManager = GetGlobalFieldManager();
 	UpdateIntegrator();
@@ -60,7 +60,7 @@ G4ElectricField* A2ElectricField::Construct(){
 
 void A2ElectricField::UpdateIntegrator(){
 	CreateStepper();
-	fIntegrationDriver = new G4MagInt_Driver(fMinStep, fStepper, fStepper->GetNumberOfVariables());
+	//fIntegrationDriver = new G4MagInt_Driver(fMinStep, fStepper, fStepper->GetNumberOfVariables());
 	fChordFinder = new G4ChordFinder(fIntegrationDriver);
 	fFieldManager->SetChordFinder(fChordFinder);
 	fFieldManager->SetDetectorField(fField);
@@ -117,7 +117,8 @@ void A2ElectricField::CreateStepper(){
 
   	delete oldStepper;
   
-  	fIntegrationDriver->RenewStepperAndAdjust(fStepper);
+	fIntegrationDriver = new G4MagInt_Driver(fMinStep, fStepper, fStepper->GetNumberOfVariables());
+  	//fIntegrationDriver->RenewStepperAndAdjust(fStepper);
 }
 
 //manually set value in Z
